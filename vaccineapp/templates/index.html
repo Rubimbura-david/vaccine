@@ -1,0 +1,329 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}vaccination - Your Health Partner{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="hero-title">Your Journey to Better Health Starts Here</h1>
+                <p class="hero-subtitle">Professional health coaching tailored to your unique needs and goals. Transform your life with expert guidance and support.</p>
+                <div class="hero-buttons">
+                    <a href="#contact" class="btn btn-primary btn-lg me-3">Get Started</a>
+                    <a href="#services" class="btn btn-outline-light btn-lg">Our Services</a>
+                </div>
+                <div class="hero-stats mt-5">
+                    <div class="row">
+                        <div class="col-4">
+                            <h3>5000+</h3>
+                            <p>Happy Clients</p>
+                        </div>
+                        <div class="col-4">
+                            <h3>50+</h3>
+                            <p>Expert Coaches</p>
+                        </div>
+                        <div class="col-4">
+                            <h3>10+</h3>
+                            <p>Years Experience</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <img src="{% static 'img/vaccine-hero.jpg' %}" 
+                     alt="Vaccine Health Coaching" class="img-fluid hero-image">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="section-title">Why Choose HealthCoach?</h2>
+                <p class="section-subtitle">We provide comprehensive health solutions for your well-being</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-syringe"></i>
+                    </div>
+                    <h4>Vaccine Experts</h4>
+                    <p>Certified professionals with years of experience in vaccination and immunization services.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-baby"></i>
+                    </div>
+                    <h4>Child Vaccination</h4>
+                    <p>Specialized care for newborns and children with complete immunization schedules.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h4>Safe & Certified</h4>
+                    <p>All vaccines are properly stored and administered following medical guidelines.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <h4>Follow-up Care</h4>
+                    <p>Complete post-vaccination monitoring and schedule management for your family.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Services Section -->
+<section id="services" class="services-section py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="section-title">Our Services</h2>
+                <p class="section-subtitle">Comprehensive health and wellness programs</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-baby-carriage"></i>
+                    </div>
+                    <h4>Infant Vaccination</h4>
+                    <p>Complete immunization schedule for newborns and infants with specialized care and monitoring.</p>
+                    <ul class="service-features">
+                        <li>Newborn immunization</li>
+                        <li>Growth monitoring</li>
+                        <li>Parent education</li>
+                    </ul>
+                    <a href="#" class="service-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-child"></i>
+                    </div>
+                    <h4>Child Immunization</h4>
+                    <p>Age-appropriate vaccines for children with proper documentation and reminder services.</p>
+                    <ul class="service-features">
+                        <li>School-age vaccines</li>
+                        <li>Booster doses</li>
+                        <li>Health certificates</li>
+                    </ul>
+                    <a href="#" class="service-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-plane"></i>
+                    </div>
+                    <h4>Travel Vaccines</h4>
+                    <p>Required and recommended vaccinations for international travel with certification.</p>
+                    <ul class="service-features">
+                        <li>Travel consultation</li>
+                        <li>International certificates</li>
+                        <li>Destination-specific advice</li>
+                    </ul>
+                    <a href="#" class="service-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Vaccine Section -->
+<section id="vaccine" class="vaccine-section py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <img src="{% static 'img/baby-vaccine.jpg' %}" 
+                     alt="Baby Vaccination" class="img-fluid rounded shadow">
+            </div>
+            <div class="col-lg-6">
+                <h2 class="section-title">Vaccine Services</h2>
+                <p class="vaccine-text">Protect your little ones with our comprehensive vaccination services. We provide complete immunization schedules for infants and children in a safe, caring environment.</p>
+                
+                <div class="vaccine-features">
+                    <div class="vaccine-feature">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Newborn Immunization</span>
+                    </div>
+                    <div class="vaccine-feature">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Infant Vaccine Schedule</span>
+                    </div>
+                    <div class="vaccine-feature">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Childhood Vaccines</span>
+                    </div>
+                    <div class="vaccine-feature">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Booster Doses</span>
+                    </div>
+                </div>
+                
+                <div class="vaccine-cta mt-4">
+                    <a href="#contact" class="btn btn-primary btn-lg">Schedule Vaccination</a>
+                    <a href="{% url 'vaccine' %}" class="btn btn-outline-primary btn-lg ms-3">Learn More</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials-section py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="section-title">What Our Clients Say</h2>
+                <p class="section-subtitle">Real stories from families who trust our vaccination services</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="testimonial-card">
+                    <div class="testimonial-content">
+                        <p>"HealthCoach made my baby's vaccination journey so smooth! The staff was gentle and professional. My baby didn't even cry!"</p>
+                    </div>
+                    <div class="testimonial-author">
+                        <img src="{% static 'img/mother-baby.jpg' %}" 
+                             alt="Sarah M." class="author-img">
+                        <div class="author-info">
+                            <h5>Sarah M.</h5>
+                            <p>New Mother</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="testimonial-card">
+                    <div class="testimonial-content">
+                        <p>"Complete vaccination schedule for both my children. The reminder system and follow-up care are excellent!"</p>
+                    </div>
+                    <div class="testimonial-author">
+                        <img src="{% static 'img/family-vaccine.jpg' %}" 
+                             alt="John D." class="author-img">
+                        <div class="author-info">
+                            <h5>John D.</h5>
+                            <p>Father of Two</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="testimonial-card">
+                    <div class="testimonial-content">
+                        <p>"As a first-time parent, I was nervous about vaccines. HealthCoach educated us and made the process stress-free."</p>
+                    </div>
+                    <div class="testimonial-author">
+                        <img src="{% static 'img/parents-baby.jpg' %}" 
+                             alt="Lisa T." class="author-img">
+                        <div class="author-info">
+                            <h5>Lisa T.</h5>
+                            <p>First-time Parent</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section id="contact" class="contact-section py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="section-title">Contact Us</h2>
+                <p class="section-subtitle">Get in touch to schedule your vaccination</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-5 mb-4 mb-lg-0">
+                <div class="contact-info">
+                    <h3 class="mb-4">Get in touch</h3>
+                    <p class="mb-4">We're here to answer your questions about vaccination schedules and child healthcare</p>
+                    
+                    <div class="mb-4">
+                        <h5>Address</h5>
+                        <p>198 West 21th Street, Suite 721 New York NY 10016</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5>Phone</h5>
+                        <p>+1 235 2355 88</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5>Email</h5>
+                        <p>info@healthcoach.com</p>
+                    </div>
+                    
+                    <div>
+                        <h5>Website</h5>
+                        <p>healthcoach.com</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-7">
+                <div class="contact-form">
+                    <h3 class="mb-4">Send us a message</h3>
+                    
+                    <form id="contactForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="fullName" class="form-label">FULL NAME</label>
+                                    <input type="text" class="form-control" id="fullName" placeholder="Name">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">EMAIL ADDRESS</label>
+                                    <input type="email" class="form-control" id="email" placeholder="Email">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">SUBJECT</label>
+                            <input type="text" class="form-control" id="subject" placeholder="Subject">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="message" class="form-label">MESSAGE</label>
+                            <textarea class="form-control" id="message" rows="5" placeholder="Message"></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">SEND MESSAGE</button>
+                        
+                        <div class="alert alert-danger mt-3" id="errorAlert">
+                            Oops! Something went wrong.
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

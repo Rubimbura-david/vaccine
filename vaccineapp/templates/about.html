@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}About Us - HealthCoach{% endblock %}
+{% block extra_css %}
+<!-- About page specific CSS -->
+<link rel="stylesheet" href="{% static 'css/about.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- About Hero Section -->
+<section class="about-hero-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8 mx-auto text-center">
+                <h1>About HealthCoach</h1>
+                <p class="lead">Your trusted partner in vaccination and child healthcare</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Mission Section -->
+<section class="mission-section py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h2 class="section-title">Our Mission</h2>
+                <p class="mission-text">
+                    At HealthCoach, we are dedicated to protecting children and families through comprehensive 
+                    vaccination services. Our mission is to ensure every child receives timely immunizations 
+                    in a safe, caring environment, supported by expert medical professionals and evidence-based practices.
+                </p>
+                <div class="mission-stats row mt-4">
+                    <div class="col-4 text-center">
+                        <h3 class="stat-number">10,000+</h3>
+                        <p class="stat-label">Vaccines Administered</p>
+                    </div>
+                    <div class="col-4 text-center">
+                        <h3 class="stat-number">25+</h3>
+                        <p class="stat-label">Certified Pediatricians</p>
+                    </div>
+                    <div class="col-4 text-center">
+                        <h3 class="stat-number">15+</h3>
+                        <p class="stat-label">Years Experience</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <img src="{% static 'img/vaccine-team.jpg' %}" 
+                     alt="Vaccine Healthcare Team" class="img-fluid rounded shadow">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Team Section -->
+<section class="team-section py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="section-title">Meet Our Medical Team</h2>
+                <p class="section-subtitle">Certified pediatricians and vaccination specialists</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="team-card text-center">
+                    <img src="{% static 'img/pediatrician-1.jpg' %}" 
+                         alt="Dr. Sarah Johnson" class="team-img">
+                    <h4 class="team-name">Dr. Sarah Johnson</h4>
+                    <p class="team-role">Head Pediatrician</p>
+                    <p class="team-bio">15+ years experience in child healthcare and immunization.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="team-card text-center">
+                    <img src="{% static 'img/vaccine-specialist.jpg' %}" 
+                         alt="Dr. Mike Chen" class="team-img">
+                    <h4 class="team-name">Dr. Mike Chen</h4>
+                    <p class="team-role">Vaccine Specialist</p>
+                    <p class="team-bio">Expert in immunization schedules and vaccine research.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="team-card text-center">
+                    <img src="{% static 'img/nurse-practitioner.jpg' %}" 
+                         alt="Emily Rodriguez" class="team-img">
+                    <h4 class="team-name">Emily Rodriguez</h4>
+                    <p class="team-role">Nurse Practitioner</p>
+                    <p class="team-bio">Specialized in pediatric care and vaccination administration.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="team-card text-center">
+                    <img src="{% static 'img/child-health.jpg' %}" 
+                         alt="Lisa Thompson" class="team-img">
+                    <h4 class="team-name">Dr. Lisa Thompson</h4>
+                    <p class="team-role">Child Health Expert</p>
+                    <p class="team-bio">Focus on preventive care and childhood development.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Values Section -->
+<section class="values-section py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="section-title">Our Values</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="value-card text-center">
+                    <div class="value-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h4>Safety First</h4>
+                    <p>We prioritize your child's safety with proper vaccine storage, handling, and administration protocols.</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="value-card text-center">
+                    <div class="value-icon">
+                        <i class="fas fa-baby"></i>
+                    </div>
+                    <h4>Child-Centered Care</h4>
+                    <p>Our approach is tailored to make vaccination experiences positive and stress-free for children.</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="value-card text-center">
+                    <div class="value-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h4>Parent Education</h4>
+                    <p>We empower parents with knowledge about vaccines, schedules, and child healthcare.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Facilities Section -->
+<section class="facilities-section py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="section-title">Our Facilities</h2>
+                <p class="section-subtitle">State-of-the-art vaccination centers</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="facility-card text-center">
+                    <div class="facility-icon">
+                        <i class="fas fa-temperature-low"></i>
+                    </div>
+                    <h4>Proper Storage</h4>
+                    <p>Medical-grade refrigerators maintain optimal vaccine temperatures at all times.</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="facility-card text-center">
+                    <div class="facility-icon">
+                        <i class="fas fa-stethoscope"></i>
+                    </div>
+                    <h4>Sterile Environment</h4>
+                    <p>Clean, sanitized spaces designed specifically for pediatric vaccination.</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="facility-card text-center">
+                    <div class="facility-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h4>Minimal Wait Times</h4>
+                    <p>Efficient scheduling system to reduce waiting and ensure timely service.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section py-5 text-center text-white">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <h2 class="cta-title">Ready to Protect Your Child?</h2>
+                <p class="cta-text">Join thousands of families who trust HealthCoach for their vaccination needs.</p>
+                <a href="{% url 'contact' %}" class="btn btn-light btn-lg cta-button">Schedule Vaccination</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
