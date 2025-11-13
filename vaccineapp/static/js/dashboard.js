@@ -239,3 +239,94 @@ document.querySelectorAll('.appointment-actions .btn').forEach(button => {
         }, 3000);
     });
 });
+// Add real-time stock level calculation
+document.addEventListener('DOMContentLoaded', function() {
+    const currentStockInput = document.getElementById('current_stock');
+    const minStockInput = document.getElementById('min_stock_level');
+    const stockAlert = document.getElementById('stockAlert');
+    
+    function updateStockIndicator() {
+        const currentStock = parseInt(currentStockInput.value) || 0;
+        const minStock = parseInt(minStockInput.value) || 1;
+        
+        let message = '';
+        let alertClass = '';
+        
+        if (currentStock === 0) {
+            message = 'Out of Stock';
+            alertClass = 'danger';
+        } else if (currentStock <= minStock * 0.2) {
+            message = 'Critical Stock';
+            alertClass = 'danger';
+        } else if (currentStock <= minStock * 0.5) {
+            message = 'Low Stock';
+            alertClass = 'warning';
+        } else if (currentStock <= minStock) {
+            message = 'Approaching Minimum';
+            alertClass = 'info';
+        } else {
+            message = 'Good Stock';
+            alertClass = 'success';
+        }
+        
+        stockAlert.className = `alert alert-${alertClass} mt-3`;
+        stockAlert.innerHTML = `<strong>Stock Status:</strong> ${message} (${currentStock} / ${minStock} doses)`;
+    }
+    
+    // Add event listeners
+    if (currentStockInput && minStockInput && stockAlert) {
+        currentStockInput.addEventListener('input', updateStockIndicator);
+        minStockInput.addEventListener('input', updateStockIndicator);
+        
+        // Initial calculation
+        updateStockIndicator();
+    }
+    
+    // Filter functionality
+    const filterButtons = document.querySelectorAll('[data-filter]');
+    const vaccineRows = document.querySelectorAll('.vaccine-row');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.getAttribute('data-filter');
+            
+            // Update active button
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Filter rows
+            vaccineRows.forEach(row => {
+                const status = row.getAttribute('data-status');
+                const expiry = row.getAttribute('data-expiry');
+                const today = new Date().toISOString().split('T')[0];
+                const thirtyDaysLater = new Date();
+                thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
+                const expiryDate = thirtyDaysLater.toISOString().split('T')[0];
+                
+                let showRow = true;
+                
+                if (filter === 'low_stock') {
+                    showRow = status === 'low_stock' || status === 'critical';
+                } else if (filter === 'expiring_soon') {
+                    showRow = expiry <= expiryDate;
+                }
+                // 'all' filter shows all rows
+                
+                row.style.display = showRow ? '' : 'none';
+            });
+        });
+    });
+    
+    // Search functionality
+    const searchInput = document.getElementById('vaccineSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            vaccineRows.forEach(row => {
+                const vaccineName = row.querySelector('td:first-child strong').textContent.toLowerCase();
+                row.style.display = vaccineName.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    }
+});

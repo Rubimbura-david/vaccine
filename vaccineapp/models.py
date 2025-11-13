@@ -1,9 +1,11 @@
+# models.py
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from datetime import date
-from django.utils import timezone  # Added missing import
+from django.utils import timezone
+from django.core.validators import MinValueValidator
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -94,24 +96,36 @@ class Patient(models.Model):
 
 class Vaccine(models.Model):
     VACCINE_TYPE_CHOICES = [
-        ('routine', 'Routine Childhood'),
-        ('travel', 'Travel'),
-        ('seasonal', 'Seasonal'),
-        ('special', 'Special Condition'),
+        ('combination', 'Combination Vaccine'),
+        ('single', 'Single Antigen'),
+        ('live', 'Live Attenuated'),
+        ('inactivated', 'Inactivated'),
+    ]
+    
+    AGE_GROUP_CHOICES = [
+        ('infant', 'Infant (0-12 months)'),
+        ('toddler', 'Toddler (1-3 years)'),
+        ('preschool', 'Preschool (3-5 years)'),
+        ('school_age', 'School Age (6-12 years)'),
+        ('adolescent', 'Adolescent (13-18 years)'),
     ]
     
     name = models.CharField(max_length=200)
     short_name = models.CharField(max_length=50, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
-    vaccine_type = models.CharField(max_length=20, choices=VACCINE_TYPE_CHOICES, default='routine')
+    vaccine_type = models.CharField(max_length=20, choices=VACCINE_TYPE_CHOICES, default='single')
+    target_diseases = models.CharField(max_length=300, blank=True, null=True)
+    
+    # Recommended administration
     recommended_age = models.CharField(max_length=100, blank=True, null=True)
-    doses_required = models.IntegerField(default=1)
+    doses_required = models.IntegerField(default=1, validators=[MinValueValidator(1)])
     days_between_doses = models.IntegerField(blank=True, null=True, help_text="Days between doses")
-    booster_required = models.BooleanField(default=False)
-    booster_frequency = models.CharField(max_length=50, blank=True, null=True, help_text="e.g., Every 10 years")
+    
+    # Age groups (from your form)
+    age_groups = models.CharField(max_length=200, blank=True, null=True, help_text="Comma-separated age groups")
     
     # Vaccine Information
-    manufacturer = models.CharField(max_length=100, blank=True, null=True)
+    manufacturer = models.CharField(max_length=200, blank=True, null=True)
     storage_temperature = models.CharField(max_length=50, blank=True, null=True)
     contraindications = models.TextField(blank=True, null=True)
     side_effects = models.TextField(blank=True, null=True)
@@ -129,6 +143,102 @@ class Vaccine(models.Model):
     
     def __str__(self):
         return self.name
+    
+    def get_administered_count(self):
+        """Get total number of times this vaccine has been administered"""
+        return VaccinationRecord.objects.filter(vaccine=self, status='administered').count()
+
+
+class VaccineInventory(models.Model):
+    STATUS_CHOICES = [
+        ('in_stock', 'In Stock'),
+        ('low_stock', 'Low Stock'),
+        ('critical', 'Critical'),
+        ('out_of_stock', 'Out of Stock'),
+    ]
+    
+    # Basic Information (from your form)
+    vaccine_name = models.CharField(max_length=200, blank=True, null=True)  # For direct entry without Vaccine FK
+    vaccine = models.ForeignKey(Vaccine, on_delete=models.CASCADE, related_name='inventory', blank=True, null=True)
+    vaccine_type = models.CharField(max_length=20, choices=Vaccine.VACCINE_TYPE_CHOICES, blank=True, null=True)
+    
+    # Stock Information (from your form)
+    current_stock = models.IntegerField(validators=[MinValueValidator(0)], default=0)
+    min_stock_level = models.IntegerField(validators=[MinValueValidator(1)], default=10)
+    doses_per_vial = models.IntegerField(default=1, validators=[MinValueValidator(1)])
+    
+    # Batch Information (from your form)
+    lot_number = models.CharField(max_length=100)
+    expiration_date = models.DateField()
+    manufacturer = models.CharField(max_length=200, blank=True, null=True)
+    
+    # Storage Information (from your form)
+    storage_temperature = models.CharField(max_length=50, blank=True, null=True)
+    
+    # Additional Information (from your form)
+    description = models.TextField(blank=True, null=True)
+    target_diseases = models.CharField(max_length=300, blank=True, null=True)
+    age_groups = models.CharField(max_length=200, blank=True, null=True, help_text="Comma-separated age groups")
+    
+    # Status
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='in_stock')
+    
+    # Additional Information
+    notes = models.TextField(blank=True, null=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['vaccine__name', 'expiration_date']
+        verbose_name_plural = "Vaccine Inventories"
+    
+    def __str__(self):
+        if self.vaccine:
+            return f"{self.vaccine.name} - Lot: {self.lot_number}"
+        return f"{self.vaccine_name} - Lot: {self.lot_number}"
+    
+    def save(self, *args, **kwargs):
+        # Auto-update status based on stock levels
+        if self.min_stock_level > 0:
+            stock_percentage = (self.current_stock / self.min_stock_level) * 100
+            
+            if self.current_stock == 0:
+                self.status = 'out_of_stock'
+            elif stock_percentage <= 20:
+                self.status = 'critical'
+            elif stock_percentage <= 50:
+                self.status = 'low_stock'
+            else:
+                self.status = 'in_stock'
+        
+        # If vaccine is linked, copy some information
+        if self.vaccine and not self.vaccine_name:
+            self.vaccine_name = self.vaccine.name
+            self.vaccine_type = self.vaccine.vaccine_type
+            self.target_diseases = self.vaccine.target_diseases
+            self.age_groups = self.vaccine.age_groups
+            self.storage_temperature = self.vaccine.storage_temperature
+            self.manufacturer = self.vaccine.manufacturer
+        
+        super().save(*args, **kwargs)
+    
+    def is_expiring_soon(self):
+        """Check if vaccine expires within 30 days"""
+        if self.expiration_date:
+            days_until_expiry = (self.expiration_date - date.today()).days
+            return days_until_expiry <= 30
+        return False
+    
+    def get_stock_percentage(self):
+        """Get stock level as percentage of minimum stock"""
+        if self.min_stock_level > 0:
+            return min(100, (self.current_stock / self.min_stock_level) * 100)
+        return 0
+    
+    def get_display_name(self):
+        """Get display name for the vaccine"""
+        return self.vaccine.name if self.vaccine else self.vaccine_name
 
 
 class VaccinationRecord(models.Model):
@@ -148,6 +258,7 @@ class VaccinationRecord(models.Model):
     
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='vaccination_records')
     vaccine = models.ForeignKey(Vaccine, on_delete=models.CASCADE, related_name='vaccination_records')
+    inventory_used = models.ForeignKey(VaccineInventory, on_delete=models.SET_NULL, null=True, blank=True, related_name='vaccination_records')
     
     # Dose Information
     dose_number = models.IntegerField(default=1, help_text="Which dose in the series")
@@ -180,6 +291,15 @@ class VaccinationRecord(models.Model):
     
     def __str__(self):
         return f"{self.patient} - {self.vaccine} (Dose {self.dose_number})"
+    
+    def save(self, *args, **kwargs):
+        # Update inventory stock when vaccine is administered
+        if self.status == 'administered' and self.inventory_used:
+            if self.inventory_used.current_stock > 0:
+                self.inventory_used.current_stock -= 1
+                self.inventory_used.save()
+        
+        super().save(*args, **kwargs)
     
     def is_complete(self):
         return self.dose_number >= self.total_doses
@@ -248,37 +368,17 @@ class Appointment(models.Model):
         return self.status in ['scheduled', 'confirmed'] and self.scheduled_date < timezone.now()
 
 
-# Fixed Signal Handlers
+# Signal Handlers
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
-    """
-    Create UserProfile when a new User is created
-    """
+    """Create UserProfile when a new User is created"""
     if created:
         UserProfile.objects.get_or_create(user=instance)
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
-    """
-    Save UserProfile when User is saved
-    """
+    """Save UserProfile when User is saved"""
     try:
         instance.userprofile.save()
     except UserProfile.DoesNotExist:
         UserProfile.objects.create(user=instance)
-
-
-# Additional signal to create default patient for new users
-@receiver(post_save, sender=User)
-def create_default_patient(sender, instance, created, **kwargs):
-    """
-    Create a default patient record for new users
-    """
-    if created:
-        Patient.objects.get_or_create(
-            user=instance,
-            first_name=instance.first_name or 'User',
-            last_name=instance.last_name or 'Patient',
-            date_of_birth=date(2000, 1, 1),  # Default date
-            gender='U'
-        )

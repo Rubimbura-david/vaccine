@@ -15,6 +15,69 @@
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
     <!-- CSRF Token for AJAX and forms -->
     <meta name="csrf-token" content="{{ csrf_token }}">
+    <style>
+        .vaccine-table-container {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .vaccine-card {
+            transition: all 0.3s ease;
+        }
+        .vaccine-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .low-stock {
+            border-left: 4px solid #ffc107;
+        }
+        .critical-stock {
+            border-left: 4px solid #dc3545;
+        }
+        .good-stock {
+            border-left: 4px solid #28a745;
+        }
+        .form-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .stats-badge {
+            font-size: 0.8rem;
+        }
+        .page-content {
+            display: none;
+        }
+        .page-content.active {
+            display: block;
+        }
+        .patient-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .schedule-item {
+            border-left: 4px solid #007bff;
+            padding-left: 15px;
+            margin-bottom: 15px;
+        }
+        .schedule-urgent {
+            border-left-color: #dc3545;
+        }
+        .record-card {
+            transition: transform 0.2s;
+        }
+        .record-card:hover {
+            transform: translateY(-3px);
+        }
+        .form-check-input:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        .invalid-feedback {
+            display: block;
+        }
+    </style>
 </head>
 <body class="dashboard-body">
     <!-- Authentication Check -->
@@ -49,7 +112,7 @@
                     </ul>
                 </div>
                 
-                <!-- User Menu - UPDATED -->
+                <!-- User Menu -->
                 <div class="dropdown">
                     <button class="btn btn-light btn-sm dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown">
                         <img src="{% static 'img/pediatrician-1.jpg' %}" 
@@ -89,43 +152,43 @@
                 <div class="position-sticky pt-3">
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link active" href="{% url 'dashboard' %}">
+                            <a class="nav-link active" href="#" data-page="dashboard">
                                 <i class="fas fa-tachometer-alt me-2"></i>
                                 Vaccine Dashboard
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">
+                            <a class="nav-link" href="#" data-page="patients">
                                 <i class="fas fa-baby me-2"></i>
                                 Pediatric Patients
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">
+                            <a class="nav-link" href="#" data-page="schedule">
                                 <i class="fas fa-calendar-check me-2"></i>
                                 Vaccination Schedule
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'vaccine' %}">
+                            <a class="nav-link" href="#" data-page="inventory">
                                 <i class="fas fa-syringe me-2"></i>
                                 Vaccine Inventory
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">
+                            <a class="nav-link" href="#" data-page="records">
                                 <i class="fas fa-file-medical me-2"></i>
                                 Immunization Records
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">
+                            <a class="nav-link" href="#" data-page="analytics">
                                 <i class="fas fa-chart-bar me-2"></i>
                                 Coverage Analytics
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">
+                            <a class="nav-link" href="#" data-page="settings">
                                 <i class="fas fa-cog me-2"></i>
                                 Clinic Settings
                             </a>
@@ -136,7 +199,7 @@
                     <div class="quick-actions mt-4">
                         <h6 class="sidebar-heading">Vaccine Actions</h6>
                         <div class="d-grid gap-2">
-                            <button class="btn btn-primary btn-sm">
+                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newVaccinationModal">
                                 <i class="fas fa-plus me-1"></i> New Vaccination
                             </button>
                             <button class="btn btn-outline-primary btn-sm">
@@ -147,95 +210,1028 @@
                 </div>
             </nav>
 
-            <!-- Main Content -->
+            <!-- Main Content Area -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <!-- Page Header -->
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Vaccination Dashboard</h1>
-                    <div class="btn-toolbar mb-2 mb-md-0">
-                        <div class="btn-group me-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary">Today</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary">Week</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary">Month</button>
+                <!-- Vaccine Dashboard Content -->
+                <div id="dashboard" class="page-content active">
+                    <!-- Your existing dashboard content goes here -->
+                    <!-- Page Header -->
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Vaccination Dashboard</h1>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+                            <div class="btn-group me-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary">Today</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary">Week</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary">Month</button>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-primary">
+                                <i class="fas fa-download me-1"></i> Export Report
+                            </button>
                         </div>
-                        <button type="button" class="btn btn-sm btn-primary">
-                            <i class="fas fa-download me-1"></i> Export Report
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="row mb-4">
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card stat-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Pediatric Patients</h6>
+                                            <h3 class="card-number">1,247</h3>
+                                            <span class="text-success">
+                                                <i class="fas fa-arrow-up me-1"></i> 5.2%
+                                            </span>
+                                        </div>
+                                        <div class="stat-icon">
+                                            <i class="fas fa-baby"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card stat-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Today's Vaccinations</h6>
+                                            <h3 class="card-number">18</h3>
+                                            <span class="text-warning">
+                                                <i class="fas fa-clock me-1"></i> 3 pending
+                                            </span>
+                                        </div>
+                                        <div class="stat-icon">
+                                            <i class="fas fa-syringe"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card stat-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Vaccinations Due</h6>
+                                            <h3 class="card-number">24</h3>
+                                            <span class="text-danger">
+                                                <i class="fas fa-exclamation-circle me-1"></i> 5 overdue
+                                            </span>
+                                        </div>
+                                        <div class="stat-icon">
+                                            <i class="fas fa-calendar-exclamation"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card stat-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Vaccine Coverage</h6>
+                                            <h3 class="card-number">94%</h3>
+                                            <span class="text-info">
+                                                <i class="fas fa-chart-line me-1"></i> +2.1%
+                                            </span>
+                                        </div>
+                                        <div class="stat-icon">
+                                            <i class="fas fa-shield-alt"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div class="row mb-4">
+                        <div class="col-lg-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">Monthly Vaccination Trends</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="visitsChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">Vaccination Completion Rate</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="vaccinationChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity & Upcoming Appointments -->
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="card-title mb-0">Recent Vaccination Activity</h6>
+                                    <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                                </div>
+                                <div class="card-body">
+                                    <div class="activity-list">
+                                        <div class="activity-item">
+                                            <div class="activity-icon completed">
+                                                <i class="fas fa-check"></i>
+                                            </div>
+                                            <div class="activity-content">
+                                                <p class="activity-text">MMR vaccination completed for Liam Chen</p>
+                                                <small class="text-muted">Age: 15 months • 10:30 AM</small>
+                                            </div>
+                                        </div>
+                                        <div class="activity-item">
+                                            <div class="activity-icon pending">
+                                                <i class="fas fa-clock"></i>
+                                            </div>
+                                            <div class="activity-content">
+                                                <p class="activity-text">DTaP booster scheduled for Maria Garcia</p>
+                                                <small class="text-muted">Due: Tomorrow • 9:15 AM</small>
+                                            </div>
+                                        </div>
+                                        <div class="activity-item">
+                                            <div class="activity-icon warning">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                            </div>
+                                            <div class="activity-content">
+                                                <p class="activity-text">Hepatitis B vaccination overdue for Noah Williams</p>
+                                                <small class="text-muted">Overdue: 2 weeks • Follow-up needed</small>
+                                            </div>
+                                        </div>
+                                        <div class="activity-item">
+                                            <div class="activity-icon completed">
+                                                <i class="fas fa-file-medical"></i>
+                                            </div>
+                                            <div class="activity-content">
+                                                <p class="activity-text">Immunization record updated for Sophia Brown</p>
+                                                <small class="text-muted">Complete schedule • Yesterday</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="card-title mb-0">Today's Vaccination Schedule</h6>
+                                    <a href="#" class="btn btn-sm btn-outline-primary">Schedule New</a>
+                                </div>
+                                <div class="card-body">
+                                    <div class="appointment-list">
+                                        <div class="appointment-item">
+                                            <div class="appointment-time">
+                                                <span class="time">10:00 AM</span>
+                                                <span class="badge bg-primary">Infant</span>
+                                            </div>
+                                            <div class="appointment-details">
+                                                <h6>Emma Johnson</h6>
+                                                <p class="text-muted mb-1">2-month vaccines: DTaP, IPV, Hib</p>
+                                                <small class="text-muted">Age: 2 months • Weight: 5.2 kg</small>
+                                            </div>
+                                            <div class="appointment-actions">
+                                                <button class="btn btn-sm btn-outline-primary">Prepare</button>
+                                            </div>
+                                        </div>
+                                        <div class="appointment-item">
+                                            <div class="appointment-time">
+                                                <span class="time">11:30 AM</span>
+                                                <span class="badge bg-success">Toddler</span>
+                                            </div>
+                                            <div class="appointment-details">
+                                                <h6>Michael Brown</h6>
+                                                <p class="text-muted mb-1">12-month MMR & Varicella</p>
+                                                <small class="text-muted">Age: 12 months • Previous: No reactions</small>
+                                            </div>
+                                            <div class="appointment-actions">
+                                                <button class="btn btn-sm btn-outline-primary">Ready</button>
+                                            </div>
+                                        </div>
+                                        <div class="appointment-item">
+                                            <div class="appointment-time">
+                                                <span class="time">02:15 PM</span>
+                                                <span class="badge bg-warning">Catch-up</span>
+                                            </div>
+                                            <div class="appointment-details">
+                                                <h6>Sarah Davis</h6>
+                                                <p class="text-muted mb-1">Influenza & HPV vaccines</p>
+                                                <small class="text-muted">Age: 12 years • Missed previous season</small>
+                                            </div>
+                                            <div class="appointment-actions">
+                                                <button class="btn btn-sm btn-outline-primary">Review</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats Row -->
+                    <div class="row mt-4">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">Patient Age Distribution</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="ageChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">Vaccine Types Administered</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="service-stats">
+                                        <div class="service-item">
+                                            <span class="service-name">DTaP/Hib/Polio</span>
+                                            <div class="progress">
+                                                <div class="progress-bar" style="width: 65%">65%</div>
+                                            </div>
+                                        </div>
+                                        <div class="service-item">
+                                            <span class="service-name">MMR/Varicella</span>
+                                            <div class="progress">
+                                                <div class="progress-bar" style="width: 45%">45%</div>
+                                            </div>
+                                        </div>
+                                        <div class="service-item">
+                                            <span class="service-name">Hepatitis B</span>
+                                            <div class="progress">
+                                                <div class="progress-bar" style="width: 35%">35%</div>
+                                            </div>
+                                        </div>
+                                        <div class="service-item">
+                                            <span class="service-name">Influenza</span>
+                                            <div class="progress">
+                                                <div class="progress-bar" style="width: 20%">20%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">Vaccine Inventory Status</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="system-status">
+                                        <div class="status-item online">
+                                            <i class="fas fa-circle"></i>
+                                            <span>DTaP Vaccine</span>
+                                            <span class="status-text">In Stock</span>
+                                        </div>
+                                        <div class="status-item warning">
+                                            <i class="fas fa-circle"></i>
+                                            <span>MMR Vaccine</span>
+                                            <span class="status-text">Low Stock</span>
+                                        </div>
+                                        <div class="status-item online">
+                                            <i class="fas fa-circle"></i>
+                                            <span>Hepatitis B</span>
+                                            <span class="status-text">In Stock</span>
+                                        </div>
+                                        <div class="status-item danger">
+                                            <i class="fas fa-circle"></i>
+                                            <span>Varicella</span>
+                                            <span class="status-text">Out of Stock</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pediatric Patients Content -->
+                <div id="patients" class="page-content">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Pediatric Patients</h1>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+                            <button type="button" class="btn btn-sm btn-primary">
+                                <i class="fas fa-plus me-1"></i> Add New Patient
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h3 class="text-primary">1,247</h3>
+                                    <p class="card-text">Total Patients</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h3 class="text-success">892</h3>
+                                    <p class="card-text">Fully Immunized</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h3 class="text-warning">218</h3>
+                                    <p class="card-text">Due for Vaccination</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h3 class="text-danger">24</h3>
+                                    <p class="card-text">Overdue Vaccinations</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Patient List</h5>
+                            <div class="d-flex">
+                                <input type="text" class="form-control form-control-sm me-2" placeholder="Search patients...">
+                                <button class="btn btn-sm btn-outline-secondary" type="button">
+                                    <i class="fas fa-filter"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Patient</th>
+                                            <th>Age</th>
+                                            <th>Last Visit</th>
+                                            <th>Vaccination Status</th>
+                                            <th>Next Due</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <img src="{% static 'img/patient-1.jpg' %}" class="patient-avatar me-3" alt="Patient">
+                                                    <div>
+                                                        <strong>Emma Johnson</strong>
+                                                        <div class="text-muted small">ID: P-00123</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>2 months</td>
+                                            <td>15 Nov 2023</td>
+                                            <td><span class="badge bg-success">Up to date</span></td>
+                                            <td>15 Jan 2024</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary">View</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <img src="{% static 'img/patient-2.jpg' %}" class="patient-avatar me-3" alt="Patient">
+                                                    <div>
+                                                        <strong>Liam Chen</strong>
+                                                        <div class="text-muted small">ID: P-00124</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>15 months</td>
+                                            <td>10 Nov 2023</td>
+                                            <td><span class="badge bg-warning">Due soon</span></td>
+                                            <td>10 Dec 2023</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary">View</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <img src="{% static 'img/patient-3.jpg' %}" class="patient-avatar me-3" alt="Patient">
+                                                    <div>
+                                                        <strong>Noah Williams</strong>
+                                                        <div class="text-muted small">ID: P-00125</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>4 years</td>
+                                            <td>05 Nov 2023</td>
+                                            <td><span class="badge bg-danger">Overdue</span></td>
+                                            <td>05 Oct 2023</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary">View</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vaccination Schedule Content -->
+                <div id="schedule" class="page-content">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Vaccination Schedule</h1>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+                            <div class="btn-group me-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary">Day</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary active">Week</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary">Month</button>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-primary">
+                                <i class="fas fa-plus me-1"></i> New Schedule
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Weekly Schedule</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="calendar"></div>
+                                    <div class="mt-4">
+                                        <h6>Today's Schedule</h6>
+                                        <div class="schedule-item">
+                                            <h6>Emma Johnson - 2 month vaccines</h6>
+                                            <p class="mb-1">DTaP, IPV, Hib, PCV13, RV</p>
+                                            <small class="text-muted">10:00 AM • Dr. Smith</small>
+                                        </div>
+                                        <div class="schedule-item">
+                                            <h6>Michael Brown - 12 month vaccines</h6>
+                                            <p class="mb-1">MMR, Varicella, HepA</p>
+                                            <small class="text-muted">11:30 AM • Dr. Johnson</small>
+                                        </div>
+                                        <div class="schedule-item schedule-urgent">
+                                            <h6>Noah Williams - Catch-up vaccines</h6>
+                                            <p class="mb-1">DTaP, IPV (Overdue)</p>
+                                            <small class="text-muted">02:15 PM • Dr. Smith</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Vaccination Reminders</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-warning">
+                                        <h6>5 Patients Due This Week</h6>
+                                        <p class="mb-0">Schedule their vaccinations</p>
+                                    </div>
+                                    <div class="alert alert-danger">
+                                        <h6>3 Overdue Vaccinations</h6>
+                                        <p class="mb-0">Follow up required</p>
+                                    </div>
+                                    
+                                    <h6 class="mt-4">Upcoming Vaccinations</h6>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            Tomorrow
+                                            <span class="badge bg-primary rounded-pill">4</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            This Week
+                                            <span class="badge bg-primary rounded-pill">12</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            Next Week
+                                            <span class="badge bg-primary rounded-pill">18</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+  <!-- Vaccine Inventory Content -->
+<div id="inventory" class="page-content">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Vaccine Inventory Management</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary active filter-btn" data-filter="all">All Vaccines</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary filter-btn" data-filter="low_stock">Low Stock</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary filter-btn" data-filter="expiring_soon">Expiring Soon</button>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newVaccineModal">
+                <i class="fas fa-plus me-1"></i> Add New Vaccine
+            </button>
+        </div>
+    </div>
+
+    <!-- Inventory Stats -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Vaccines</h6>
+                            <h3 class="card-number">{{ total_vaccines }}</h3>
+                            <span class="text-success">
+                                <i class="fas fa-box me-1"></i> {{ vaccine_types }} types
+                            </span>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-syringe"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Doses</h6>
+                            <h3 class="card-number">{{ total_doses }}</h3>
+                            <span class="text-info">
+                                <i class="fas fa-vial me-1"></i> Available stock
+                            </span>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-prescription-bottle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Low Stock Alert</h6>
+                            <h3 class="card-number">{{ low_stock_count }}</h3>
+                            <span class="text-warning">
+                                <i class="fas fa-exclamation-triangle me-1"></i> Needs attention
+                            </span>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Administered</h6>
+                            <h3 class="card-number">{{ total_administered }}</h3>
+                            <span class="text-success">
+                                <i class="fas fa-chart-line me-1"></i> This period
+                            </span>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vaccine Inventory Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Vaccine Inventory</h5>
+                    <div class="d-flex">
+                        <input type="text" class="form-control form-control-sm me-2" placeholder="Search vaccines..." id="vaccineSearch">
+                        <button class="btn btn-sm btn-outline-secondary" type="button" id="clearSearch">
+                            <i class="fas fa-times"></i>
                         </button>
                     </div>
                 </div>
-
-                <!-- Stats Cards -->
-                <div class="row mb-4">
-                    <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card stat-card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h6 class="card-title">Pediatric Patients</h6>
-                                        <h3 class="card-number">1,247</h3>
-                                        <span class="text-success">
-                                            <i class="fas fa-arrow-up me-1"></i> 5.2%
+                <div class="card-body p-0">
+                    <div class="vaccine-table-container">
+                        <table class="table table-hover mb-0" id="vaccineTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Vaccine Name</th>
+                                    <th>Type</th>
+                                    <th>Current Stock</th>
+                                    <th>Administered</th>
+                                    <th>Expiry Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in vaccine_inventory %}
+                                <tr class="vaccine-row" data-vaccine-id="{{ item.id }}" data-status="{{ item.status }}" data-expiry="{{ item.expiration_date|date:'Y-m-d' }}">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                <i class="fas fa-syringe 
+                                                    {% if item.status == 'in_stock' %}text-primary
+                                                    {% elif item.status == 'low_stock' %}text-warning
+                                                    {% elif item.status == 'critical' %}text-danger
+                                                    {% else %}text-secondary{% endif %}"></i>
+                                            </div>
+                                            <div>
+                                                <strong class="vaccine-name">{{ item.get_display_name }}</strong>
+                                                <div class="text-muted small vaccine-diseases">
+                                                    {% if item.vaccine.target_diseases %}
+                                                        {{ item.vaccine.target_diseases }}
+                                                    {% elif item.target_diseases %}
+                                                        {{ item.target_diseases }}
+                                                    {% else %}
+                                                        Vaccine
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="vaccine-type">
+                                        {% if item.vaccine %}
+                                            {{ item.vaccine.get_vaccine_type_display }}
+                                        {% else %}
+                                            {{ item.get_vaccine_type_display|default:"N/A" }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar 
+                                                    {% if item.status == 'in_stock' %}bg-success
+                                                    {% elif item.status == 'low_stock' %}bg-warning
+                                                    {% elif item.status == 'critical' %}bg-danger
+                                                    {% else %}bg-secondary{% endif %}" 
+                                                    style="width: {{ item.get_stock_percentage }}%">
+                                                </div>
+                                            </div>
+                                            <span class="stock-count">{{ item.current_stock }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="administered-count">
+                                        {% if item.vaccine.get_administered_count %}
+                                            {{ item.vaccine.get_administered_count }}
+                                        {% else %}
+                                            0
+                                        {% endif %}
+                                    </td>
+                                    <td class="expiry-date">
+                                        {% if item.expiration_date %}
+                                            {{ item.expiration_date|date:"d/m/Y" }}
+                                            {% if item.is_expiring_soon %}
+                                                <span class="badge bg-warning ms-1">Soon</span>
+                                            {% endif %}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if item.status == 'in_stock' %}bg-success
+                                            {% elif item.status == 'low_stock' %}bg-warning
+                                            {% elif item.status == 'critical' %}bg-danger
+                                            {% else %}bg-secondary{% endif %} vaccine-status">
+                                            {{ item.get_status_display }}
                                         </span>
-                                    </div>
-                                    <div class="stat-icon">
-                                        <i class="fas fa-baby"></i>
-                                    </div>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary view-vaccine" data-vaccine-id="{{ item.id }}" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary edit-vaccine" data-vaccine-id="{{ item.id }}" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger delete-vaccine" data-vaccine-id="{{ item.id }}" data-vaccine-name="{{ item.get_display_name }}" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                                            <p>No vaccine inventory found.</p>
+                                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newVaccineModal">
+                                                <i class="fas fa-plus me-1"></i> Add First Vaccine
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<!-- Edit Vaccine Modal -->
+<div class="modal fade" id="editVaccineModal" tabindex="-1" aria-labelledby="editVaccineModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editVaccineModalLabel">Edit Vaccine</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="editVaccineContent">
+                <!-- Edit form will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveEditedVaccine">
+                    <i class="fas fa-save me-1"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+    <!-- Vaccine Cards View -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Vaccine Details</h5>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="toggleCardView">
+                    <label class="form-check-label" for="toggleCardView">Card View</label>
+                </div>
+            </div>
+        </div>
+        
+        {% for item in vaccine_inventory %}
+        <div class="col-lg-4 col-md-6 mb-4 vaccine-card-item" data-vaccine-id="{{ item.id }}" data-status="{{ item.status }}" data-expiry="{{ item.expiration_date|date:'Y-m-d' }}">
+            <div class="card vaccine-card 
+                {% if item.status == 'in_stock' %}good-stock
+                {% elif item.status == 'low_stock' %}low-stock
+                {% elif item.status == 'critical' %}critical-stock
+                {% else %}border-left{% endif %}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="card-title vaccine-name">{{ item.get_display_name }}</h5>
+                            <span class="badge 
+                                {% if item.status == 'in_stock' %}bg-primary
+                                {% elif item.status == 'low_stock' %}bg-warning
+                                {% elif item.status == 'critical' %}bg-danger
+                                {% else %}bg-secondary{% endif %} vaccine-type">
+                                {% if item.vaccine %}
+                                    {{ item.vaccine.get_vaccine_type_display }}
+                                {% else %}
+                                    {{ item.get_vaccine_type_display|default:"Vaccine" }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        <i class="fas fa-syringe fa-2x 
+                            {% if item.status == 'in_stock' %}text-primary
+                            {% elif item.status == 'low_stock' %}text-warning
+                            {% elif item.status == 'critical' %}text-danger
+                            {% else %}text-secondary{% endif %}"></i>
+                    </div>
+                    
+                    <p class="card-text text-muted vaccine-description">
+                        {% if item.vaccine.description %}
+                            {{ item.vaccine.description|truncatewords:20 }}
+                        {% elif item.description %}
+                            {{ item.description|truncatewords:20 }}
+                        {% else %}
+                            Vaccine inventory item.
+                        {% endif %}
+                    </p>
+                    
+                    <div class="vaccine-stats">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Current Stock:</span>
+                            <strong class="stock-count">{{ item.current_stock }} doses</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Administered:</span>
+                            <strong class="administered-count">
+                                {% if item.vaccine.get_administered_count %}
+                                    {{ item.vaccine.get_administered_count }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                                 patients
+                            </strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Recommended Age:</span>
+                            <strong class="recommended-age">
+                                {% if item.vaccine.recommended_age %}
+                                    {{ item.vaccine.recommended_age }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Expiry:</span>
+                            <strong class="expiry-date {% if item.is_expiring_soon %}text-warning{% else %}text-success{% endif %}">
+                                {% if item.expiration_date %}
+                                    {{ item.expiration_date|date:"d/m/Y" }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </strong>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <div class="progress mb-2">
+                            <div class="progress-bar 
+                                {% if item.status == 'in_stock' %}bg-success
+                                {% elif item.status == 'low_stock' %}bg-warning
+                                {% elif item.status == 'critical' %}bg-danger
+                                {% else %}bg-secondary{% endif %}" 
+                                style="width: {{ item.get_stock_percentage }}%">
+                            </div>
+                        </div>
+                        <small class="text-muted">Stock level: {{ item.get_stock_percentage|floatformat:0 }}%</small>
+                    </div>
+                    
+                    <div class="mt-3 d-grid gap-2">
+                        <button class="btn btn-sm btn-outline-primary view-vaccine-details" data-vaccine-id="{{ item.id }}">
+                            <i class="fas fa-eye me-1"></i> View Details
+                        </button>
+                        {% if item.status == 'low_stock' %}
+                        <button class="btn btn-sm btn-outline-warning reorder-vaccine" data-vaccine-id="{{ item.id }}">
+                            <i class="fas fa-sync me-1"></i> Reorder Now
+                        </button>
+                        {% elif item.status == 'critical' %}
+                        <button class="btn btn-sm btn-outline-danger reorder-vaccine" data-vaccine-id="{{ item.id }}">
+                            <i class="fas fa-exclamation-triangle me-1"></i> Emergency Order
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Vaccine Details Modal -->
+<div class="modal fade" id="vaccineDetailsModal" tabindex="-1" aria-labelledby="vaccineDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="vaccineDetailsModalLabel">Vaccine Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="vaccineDetailsContent">
+                <!-- Vaccine details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="editVaccineBtn">Edit Vaccine</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteVaccineModal" tabindex="-1" aria-labelledby="deleteVaccineModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteVaccineModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteVaccineName"></strong>?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteVaccine">Delete Vaccine</button>
+            </div>
+        </div>
+    </div>
+</div>
+                <!-- Immunization Records Content -->
+                <div id="records" class="page-content">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Immunization Records</h1>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+                            <button type="button" class="btn btn-sm btn-primary">
+                                <i class="fas fa-plus me-1"></i> New Record
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h3 class="text-primary">94%</h3>
+                                    <p class="card-text">Immunization Coverage</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h3 class="text-success">1,172</h3>
+                                    <p class="card-text">Complete Records</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h3 class="text-warning">75</h3>
+                                    <p class="card-text">Incomplete Records</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card stat-card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h6 class="card-title">Today's Vaccinations</h6>
-                                        <h3 class="card-number">18</h3>
-                                        <span class="text-warning">
-                                            <i class="fas fa-clock me-1"></i> 3 pending
-                                        </span>
-                                    </div>
-                                    <div class="stat-icon">
-                                        <i class="fas fa-syringe"></i>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card record-card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Recent Immunizations</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="list-group list-group-flush">
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Emma Johnson</h6>
+                                                <small>2 months</small>
+                                            </div>
+                                            <p class="mb-1">DTaP, IPV, Hib, PCV13, RV</p>
+                                            <small class="text-muted">Administered: 15 Nov 2023</small>
+                                        </div>
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Liam Chen</h6>
+                                                <small>15 months</small>
+                                            </div>
+                                            <p class="mb-1">MMR, Varicella, HepA</p>
+                                            <small class="text-muted">Administered: 10 Nov 2023</small>
+                                        </div>
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Noah Williams</h6>
+                                                <small>4 years</small>
+                                            </div>
+                                            <p class="mb-1">DTaP, IPV, MMR, Varicella</p>
+                                            <small class="text-muted">Administered: 05 Nov 2023</small>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card stat-card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h6 class="card-title">Vaccinations Due</h6>
-                                        <h3 class="card-number">24</h3>
-                                        <span class="text-danger">
-                                            <i class="fas fa-exclamation-circle me-1"></i> 5 overdue
-                                        </span>
-                                    </div>
-                                    <div class="stat-icon">
-                                        <i class="fas fa-calendar-exclamation"></i>
-                                    </div>
+                        <div class="col-md-6">
+                            <div class="card record-card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Vaccination Certificates</h5>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card stat-card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h6 class="card-title">Vaccine Coverage</h6>
-                                        <h3 class="card-number">94%</h3>
-                                        <span class="text-info">
-                                            <i class="fas fa-chart-line me-1"></i> +2.1%
-                                        </span>
-                                    </div>
-                                    <div class="stat-icon">
-                                        <i class="fas fa-shield-alt"></i>
+                                <div class="card-body">
+                                    <p>Generate and print vaccination certificates for patients.</p>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-outline-primary">
+                                            <i class="fas fa-print me-2"></i> Print All Due Certificates
+                                        </button>
+                                        <button class="btn btn-outline-secondary">
+                                            <i class="fas fa-download me-2"></i> Export Records
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -243,130 +1239,94 @@
                     </div>
                 </div>
 
-                <!-- Charts Row -->
-                <div class="row mb-4">
-                    <div class="col-lg-8">
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="card-title mb-0">Monthly Vaccination Trends</h6>
+                <!-- Coverage Analytics Content -->
+                <div id="analytics" class="page-content">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Coverage Analytics</h1>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+                            <div class="btn-group me-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary">Month</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary active">Quarter</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary">Year</button>
                             </div>
-                            <div class="card-body">
-                                <canvas id="visitsChart" height="250"></canvas>
-                            </div>
+                            <button type="button" class="btn btn-sm btn-primary">
+                                <i class="fas fa-download me-1"></i> Export Report
+                            </button>
                         </div>
                     </div>
-                    <div class="col-lg-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="card-title mb-0">Vaccination Completion Rate</h6>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="vaccinationChart" height="250"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Recent Activity & Upcoming Appointments -->
-                <div class="row">
-                    <div class="col-lg-6">
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h6 class="card-title mb-0">Recent Vaccination Activity</h6>
-                                <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Vaccination Coverage Over Time</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="coverageChart" height="300"></canvas>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <div class="activity-list">
-                                    <div class="activity-item">
-                                        <div class="activity-icon completed">
-                                            <i class="fas fa-check"></i>
-                                        </div>
-                                        <div class="activity-content">
-                                            <p class="activity-text">MMR vaccination completed for Liam Chen</p>
-                                            <small class="text-muted">Age: 15 months • 10:30 AM</small>
-                                        </div>
-                                    </div>
-                                    <div class="activity-item">
-                                        <div class="activity-icon pending">
-                                            <i class="fas fa-clock"></i>
-                                        </div>
-                                        <div class="activity-content">
-                                            <p class="activity-text">DTaP booster scheduled for Maria Garcia</p>
-                                            <small class="text-muted">Due: Tomorrow • 9:15 AM</small>
-                                        </div>
-                                    </div>
-                                    <div class="activity-item">
-                                        <div class="activity-icon warning">
-                                            <i class="fas fa-exclamation-triangle"></i>
-                                        </div>
-                                        <div class="activity-content">
-                                            <p class="activity-text">Hepatitis B vaccination overdue for Noah Williams</p>
-                                            <small class="text-muted">Overdue: 2 weeks • Follow-up needed</small>
-                                        </div>
-                                    </div>
-                                    <div class="activity-item">
-                                        <div class="activity-icon completed">
-                                            <i class="fas fa-file-medical"></i>
-                                        </div>
-                                        <div class="activity-content">
-                                            <p class="activity-text">Immunization record updated for Sophia Brown</p>
-                                            <small class="text-muted">Complete schedule • Yesterday</small>
-                                        </div>
-                                    </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Coverage by Vaccine</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="vaccineCoverageChart" height="300"></canvas>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="col-lg-6">
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h6 class="card-title mb-0">Today's Vaccination Schedule</h6>
-                                <a href="#" class="btn btn-sm btn-outline-primary">Schedule New</a>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Age Group Coverage</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="ageCoverageChart" height="250"></canvas>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <div class="appointment-list">
-                                    <div class="appointment-item">
-                                        <div class="appointment-time">
-                                            <span class="time">10:00 AM</span>
-                                            <span class="badge bg-primary">Infant</span>
-                                        </div>
-                                        <div class="appointment-details">
-                                            <h6>Emma Johnson</h6>
-                                            <p class="text-muted mb-1">2-month vaccines: DTaP, IPV, Hib</p>
-                                            <small class="text-muted">Age: 2 months • Weight: 5.2 kg</small>
-                                        </div>
-                                        <div class="appointment-actions">
-                                            <button class="btn btn-sm btn-outline-primary">Prepare</button>
-                                        </div>
-                                    </div>
-                                    <div class="appointment-item">
-                                        <div class="appointment-time">
-                                            <span class="time">11:30 AM</span>
-                                            <span class="badge bg-success">Toddler</span>
-                                        </div>
-                                        <div class="appointment-details">
-                                            <h6>Michael Brown</h6>
-                                            <p class="text-muted mb-1">12-month MMR & Varicella</p>
-                                            <small class="text-muted">Age: 12 months • Previous: No reactions</small>
-                                        </div>
-                                        <div class="appointment-actions">
-                                            <button class="btn btn-sm btn-outline-primary">Ready</button>
-                                        </div>
-                                    </div>
-                                    <div class="appointment-item">
-                                        <div class="appointment-time">
-                                            <span class="time">02:15 PM</span>
-                                            <span class="badge bg-warning">Catch-up</span>
-                                        </div>
-                                        <div class="appointment-details">
-                                            <h6>Sarah Davis</h6>
-                                            <p class="text-muted mb-1">Influenza & HPV vaccines</p>
-                                            <small class="text-muted">Age: 12 years • Missed previous season</small>
-                                        </div>
-                                        <div class="appointment-actions">
-                                            <button class="btn btn-sm btn-outline-primary">Review</button>
-                                        </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Regional Coverage</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Region</th>
+                                                    <th>Coverage</th>
+                                                    <th>Trend</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>North District</td>
+                                                    <td>96%</td>
+                                                    <td><span class="text-success"><i class="fas fa-arrow-up"></i> 2.1%</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>South District</td>
+                                                    <td>92%</td>
+                                                    <td><span class="text-success"><i class="fas fa-arrow-up"></i> 1.5%</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>East District</td>
+                                                    <td>89%</td>
+                                                    <td><span class="text-warning"><i class="fas fa-minus"></i> 0.2%</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>West District</td>
+                                                    <td>94%</td>
+                                                    <td><span class="text-success"><i class="fas fa-arrow-up"></i> 3.2%</span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
@@ -374,79 +1334,94 @@
                     </div>
                 </div>
 
-                <!-- Quick Stats Row -->
-                <div class="row mt-4">
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="card-title mb-0">Patient Age Distribution</h6>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="ageChart" height="200"></canvas>
-                            </div>
-                        </div>
+                <!-- Clinic Settings Content -->
+                <div id="settings" class="page-content">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Clinic Settings</h1>
                     </div>
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="card-title mb-0">Vaccine Types Administered</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="service-stats">
-                                    <div class="service-item">
-                                        <span class="service-name">DTaP/Hib/Polio</span>
-                                        <div class="progress">
-                                            <div class="progress-bar" style="width: 65%">65%</div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Clinic Information</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form>
+                                        <div class="mb-3">
+                                            <label for="clinicName" class="form-label">Clinic Name</label>
+                                            <input type="text" class="form-control" id="clinicName" value="HealthCoach Pediatric Clinic">
                                         </div>
-                                    </div>
-                                    <div class="service-item">
-                                        <span class="service-name">MMR/Varicella</span>
-                                        <div class="progress">
-                                            <div class="progress-bar" style="width: 45%">45%</div>
+                                        <div class="mb-3">
+                                            <label for="clinicAddress" class="form-label">Address</label>
+                                            <textarea class="form-control" id="clinicAddress" rows="3">123 Health Street, Medical City, MC 12345</textarea>
                                         </div>
-                                    </div>
-                                    <div class="service-item">
-                                        <span class="service-name">Hepatitis B</span>
-                                        <div class="progress">
-                                            <div class="progress-bar" style="width: 35%">35%</div>
+                                        <div class="mb-3">
+                                            <label for="clinicPhone" class="form-label">Phone</label>
+                                            <input type="tel" class="form-control" id="clinicPhone" value="(555) 123-4567">
                                         </div>
-                                    </div>
-                                    <div class="service-item">
-                                        <span class="service-name">Influenza</span>
-                                        <div class="progress">
-                                            <div class="progress-bar" style="width: 20%">20%</div>
-                                        </div>
-                                    </div>
+                                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="card-title mb-0">Vaccine Inventory Status</h6>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Vaccine Schedule Settings</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="reminderNotifications" checked>
+                                        <label class="form-check-label" for="reminderNotifications">Vaccination Reminders</label>
+                                    </div>
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="lowStockAlerts" checked>
+                                        <label class="form-check-label" for="lowStockAlerts">Low Stock Alerts</label>
+                                    </div>
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="autoScheduling" checked>
+                                        <label class="form-check-label" for="autoScheduling">Auto-schedule Follow-ups</label>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="reminderDays" class="form-label">Reminder Days Before Due</label>
+                                        <input type="number" class="form-control" id="reminderDays" value="7">
+                                    </div>
+                                    <button type="button" class="btn btn-primary">Save Settings</button>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <div class="system-status">
-                                    <div class="status-item online">
-                                        <i class="fas fa-circle"></i>
-                                        <span>DTaP Vaccine</span>
-                                        <span class="status-text">In Stock</span>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">User Management</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="list-group list-group-flush">
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0">Dr. Sarah Johnson</h6>
+                                                <small class="text-muted">Administrator</small>
+                                            </div>
+                                            <span class="badge bg-primary">Active</span>
+                                        </div>
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0">Dr. Michael Smith</h6>
+                                                <small class="text-muted">Pediatrician</small>
+                                            </div>
+                                            <span class="badge bg-primary">Active</span>
+                                        </div>
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0">Nurse Emily Davis</h6>
+                                                <small class="text-muted">Vaccination Nurse</small>
+                                            </div>
+                                            <span class="badge bg-primary">Active</span>
+                                        </div>
                                     </div>
-                                    <div class="status-item warning">
-                                        <i class="fas fa-circle"></i>
-                                        <span>MMR Vaccine</span>
-                                        <span class="status-text">Low Stock</span>
-                                    </div>
-                                    <div class="status-item online">
-                                        <i class="fas fa-circle"></i>
-                                        <span>Hepatitis B</span>
-                                        <span class="status-text">In Stock</span>
-                                    </div>
-                                    <div class="status-item danger">
-                                        <i class="fas fa-circle"></i>
-                                        <span>Varicella</span>
-                                        <span class="status-text">Out of Stock</span>
+                                    <div class="mt-3 d-grid">
+                                        <button class="btn btn-outline-primary">Add New User</button>
                                     </div>
                                 </div>
                             </div>
@@ -454,6 +1429,121 @@
                     </div>
                 </div>
             </main>
+        </div>
+    </div>
+
+    <!-- Add New Vaccine Modal -->
+    <div class="modal fade" id="newVaccineModal" tabindex="-1" aria-labelledby="newVaccineModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newVaccineModalLabel">Add New Vaccine to Inventory</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="vaccineForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="vaccineName" class="form-label">Vaccine Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="vaccineName" required>
+                                <div class="form-text">Enter the name of the vaccine</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="vaccineType" class="form-label">Vaccine Type <span class="text-danger">*</span></label>
+                                <select class="form-select" id="vaccineType" required>
+                                    <option value="" selected disabled>Select type</option>
+                                    <option value="combination">Combination Vaccine</option>
+                                    <option value="single">Single Antigen</option>
+                                    <option value="live">Live Attenuated</option>
+                                    <option value="inactivated">Inactivated</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="manufacturer" class="form-label">Manufacturer <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="manufacturer" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="lotNumber" class="form-label">Lot Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="lotNumber" required>
+                                <div class="form-text">Manufacturer's batch/lot number</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="quantity" class="form-label">Quantity <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="quantity" min="0" required>
+                                <div class="form-text">Current number of doses available</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="minStock" class="form-label">Minimum Stock Level <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="minStock" min="1" required>
+                                <div class="form-text">Alert when stock falls below this level</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="dosesPerVial" class="form-label">Doses per Vial <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="dosesPerVial" min="1" value="1" required>
+                                <div class="form-text">Number of doses in each vial/container</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="expiryDate" class="form-label">Expiry Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="expiryDate" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="storageTemp" class="form-label">Storage Temperature <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="storageTemp" placeholder="e.g., 2°C to 8°C" required>
+                                <div class="form-text">Required storage temperature range</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" rows="3" placeholder="Enter vaccine description..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="targetDiseases" class="form-label">Target Diseases</label>
+                            <input type="text" class="form-control" id="targetDiseases" placeholder="e.g., Diphtheria, Tetanus, Pertussis">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Recommended Age Groups</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="infant" value="infant">
+                                <label class="form-check-label" for="infant">Infant (0-12 months)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="toddler" value="toddler">
+                                <label class="form-check-label" for="toddler">Toddler (1-3 years)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="preschool" value="preschool">
+                                <label class="form-check-label" for="preschool">Preschool (3-5 years)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="schoolAge" value="school_age">
+                                <label class="form-check-label" for="schoolAge">School Age (6-12 years)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="adolescent" value="adolescent">
+                                <label class="form-check-label" for="adolescent">Adolescent (13-18 years)</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveVaccine">
+                        <i class="fas fa-save me-1"></i> Save Vaccine
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -529,7 +1619,956 @@
                     }
                 }
             });
+
+            // Coverage Analytics Charts
+            const coverageCtx = document.getElementById('coverageChart').getContext('2d');
+            new Chart(coverageCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Vaccination Coverage %',
+                        data: [85, 87, 89, 90, 91, 92, 93, 93, 94, 94, 94, 94],
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            min: 80,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            const vaccineCoverageCtx = document.getElementById('vaccineCoverageChart').getContext('2d');
+            new Chart(vaccineCoverageCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['DTaP', 'MMR', 'HepB', 'IPV', 'Varicella', 'Hib'],
+                    datasets: [{
+                        data: [96, 94, 92, 95, 90, 93],
+                        backgroundColor: [
+                            '#007bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#20c997'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '60%'
+                }
+            });
+
+            const ageCoverageCtx = document.getElementById('ageCoverageChart').getContext('2d');
+            new Chart(ageCoverageCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['0-1 yr', '1-3 yr', '3-6 yr', '6-12 yr', '12-18 yr'],
+                    datasets: [{
+                        label: 'Coverage %',
+                        data: [98, 96, 94, 92, 90],
+                        backgroundColor: '#17a2b8'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            min: 85,
+                            max: 100
+                        }
+                    }
+                }
+            });
         });
+
+        // Navigation functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLinks = document.querySelectorAll('.nav-link[data-page]');
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove active class from all links
+                    navLinks.forEach(nav => nav.classList.remove('active'));
+                    
+                    // Add active class to clicked link
+                    this.classList.add('active');
+                    
+                    // Hide all page content
+                    const pages = document.querySelectorAll('.page-content');
+                    pages.forEach(page => page.classList.remove('active'));
+                    
+                    // Show selected page content
+                    const pageId = this.getAttribute('data-page');
+                    document.getElementById(pageId).classList.add('active');
+                });
+            });
+            
+            // Vaccine search functionality
+            const vaccineSearch = document.getElementById('vaccineSearch');
+            if (vaccineSearch) {
+                vaccineSearch.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const tableRows = document.querySelectorAll('.table tbody tr');
+                    
+                    tableRows.forEach(row => {
+                        const vaccineName = row.querySelector('td:first-child strong').textContent.toLowerCase();
+                        if (vaccineName.includes(searchTerm)) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            }
+        });
+
+        // Vaccine Form Handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const saveVaccineBtn = document.getElementById('saveVaccine');
+            if (saveVaccineBtn) {
+                saveVaccineBtn.addEventListener('click', function() {
+                    handleVaccineFormSubmission();
+                });
+            }
+
+            // Auto-fill today's date as minimum for expiry date
+            const expiryDateField = document.getElementById('expiryDate');
+            if (expiryDateField) {
+                const today = new Date().toISOString().split('T')[0];
+                expiryDateField.min = today;
+            }
+        });
+
+        function handleVaccineFormSubmission() {
+            const form = document.getElementById('vaccineForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            // Collect form data
+            const formData = {
+                vaccineName: document.getElementById('vaccineName').value,
+                vaccineType: document.getElementById('vaccineType').value,
+                manufacturer: document.getElementById('manufacturer').value,
+                lotNumber: document.getElementById('lotNumber').value,
+                quantity: parseInt(document.getElementById('quantity').value),
+                minStock: parseInt(document.getElementById('minStock').value),
+                dosesPerVial: parseInt(document.getElementById('dosesPerVial').value),
+                expiryDate: document.getElementById('expiryDate').value,
+                storageTemp: document.getElementById('storageTemp').value,
+                description: document.getElementById('description').value,
+                targetDiseases: document.getElementById('targetDiseases').value,
+                ageGroups: getSelectedAgeGroups()
+            };
+
+            // Validate required fields
+            if (!formData.vaccineName || !formData.vaccineType || !formData.manufacturer || 
+                !formData.lotNumber || !formData.expiryDate || !formData.storageTemp) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            // Validate numbers
+            if (formData.quantity < 0 || formData.minStock < 1 || formData.dosesPerVial < 1) {
+                alert('Please enter valid numbers for quantity, minimum stock, and doses per vial.');
+                return;
+            }
+
+            // Validate expiry date
+            const today = new Date().toISOString().split('T')[0];
+            if (formData.expiryDate < today) {
+                alert('Expiry date cannot be in the past.');
+                return;
+            }
+
+            // Show loading state
+            const saveBtn = document.getElementById('saveVaccine');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveBtn.disabled = true;
+
+            // Send data to server
+            fetch('/create-vaccine-api/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Vaccine added successfully!');
+                    // Close modal and reset form
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('newVaccineModal'));
+                    modal.hide();
+                    form.reset();
+                    // Reload the page to show the new vaccine in inventory
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error saving vaccine. Please try again.');
+            })
+            .finally(() => {
+                // Restore button state
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+            });
+        }
+
+        function getSelectedAgeGroups() {
+            const ageGroups = [];
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked && ['infant', 'toddler', 'preschool', 'schoolAge', 'adolescent'].includes(checkbox.id)) {
+                    ageGroups.push(checkbox.value);
+                }
+            });
+            
+            return ageGroups;
+        }
+
+        // CSRF token helper function
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
     </script>
 </body>
-</html>
+</html><script>
+// Vaccine Inventory JavaScript - Fixed for your Django backend
+document.addEventListener('DOMContentLoaded', function() {
+    let currentVaccineId = null;
+
+    // View Vaccine Details
+    document.querySelectorAll('.view-vaccine, .view-vaccine-details').forEach(button => {
+        button.addEventListener('click', function() {
+            const vaccineId = this.getAttribute('data-vaccine-id');
+            showVaccineDetails(vaccineId);
+        });
+    });
+
+    // Edit Vaccine - Open Edit Modal
+    document.querySelectorAll('.edit-vaccine').forEach(button => {
+        button.addEventListener('click', function() {
+            const vaccineId = this.getAttribute('data-vaccine-id');
+            showEditVaccineModal(vaccineId);
+        });
+    });
+
+    // Delete Vaccine
+    document.querySelectorAll('.delete-vaccine').forEach(button => {
+        button.addEventListener('click', function() {
+            const vaccineId = this.getAttribute('data-vaccine-id');
+            const vaccineName = this.getAttribute('data-vaccine-name');
+            confirmDeleteVaccine(vaccineId, vaccineName);
+        });
+    });
+
+    // Confirm delete vaccine
+    const confirmDeleteBtn = document.getElementById('confirmDeleteVaccine');
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', function() {
+            deleteVaccine(currentVaccineId);
+        });
+    }
+
+    // Edit vaccine from details modal
+    const editVaccineBtn = document.getElementById('editVaccineBtn');
+    if (editVaccineBtn) {
+        editVaccineBtn.addEventListener('click', function() {
+            if (currentVaccineId) {
+                showEditVaccineModal(currentVaccineId);
+            }
+        });
+    }
+
+    // Save edited vaccine button
+    const saveEditedVaccineBtn = document.getElementById('saveEditedVaccine');
+    if (saveEditedVaccineBtn) {
+        saveEditedVaccineBtn.addEventListener('click', function() {
+            saveEditedVaccine();
+        });
+    }
+
+    // Filter functionality
+    document.querySelectorAll('.filter-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.getAttribute('data-filter');
+            filterVaccines(filter);
+            
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    // Search functionality
+    const vaccineSearch = document.getElementById('vaccineSearch');
+    if (vaccineSearch) {
+        vaccineSearch.addEventListener('input', function() {
+            searchVaccines(this.value.toLowerCase());
+        });
+    }
+
+    // Clear search
+    const clearSearch = document.getElementById('clearSearch');
+    if (clearSearch) {
+        clearSearch.addEventListener('click', function() {
+            if (vaccineSearch) {
+                vaccineSearch.value = '';
+                searchVaccines('');
+            }
+        });
+    }
+});
+
+// Show vaccine details - Fetch from Django backend
+function showVaccineDetails(vaccineId) {
+    currentVaccineId = vaccineId;
+    
+    // Show loading state
+    document.getElementById('vaccineDetailsContent').innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading vaccine details...</p>
+        </div>
+    `;
+    
+    // Fetch vaccine details from Django - using your existing API endpoint
+    fetch(`/api/vaccines/${vaccineId}/`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch vaccine details');
+            }
+            return response.json();
+        })
+        .then(vaccine => {
+            displayVaccineDetails(vaccine);
+        })
+        .catch(error => {
+            console.error('Error fetching vaccine details:', error);
+            document.getElementById('vaccineDetailsContent').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error loading vaccine details: ${error.message}
+                </div>
+            `;
+        });
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('vaccineDetailsModal'));
+    modal.show();
+}
+
+// Display vaccine details in modal
+function displayVaccineDetails(vaccine) {
+    const expiryDate = vaccine.expiration_date ? new Date(vaccine.expiration_date) : null;
+    const isExpiringSoon = expiryDate ? (expiryDate - new Date()) / (1000 * 60 * 60 * 24) <= 30 : false;
+    
+    const content = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-muted">Vaccine Information</h6>
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Name:</strong></td>
+                        <td>${vaccine.name || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Type:</strong></td>
+                        <td>${vaccine.vaccine_type_display || vaccine.vaccine_type || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Manufacturer:</strong></td>
+                        <td>${vaccine.manufacturer || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Lot Number:</strong></td>
+                        <td>${vaccine.lot_number || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Target Diseases:</strong></td>
+                        <td>${vaccine.target_diseases || 'N/A'}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-muted">Inventory Details</h6>
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Current Stock:</strong></td>
+                        <td>
+                            <span class="badge ${getStockBadgeClass(vaccine.status)}">
+                                ${vaccine.current_stock} doses
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Administered:</strong></td>
+                        <td>${vaccine.administered_count || 0} patients</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Expiry Date:</strong></td>
+                        <td>
+                            ${expiryDate ? expiryDate.toLocaleDateString() : 'N/A'}
+                            ${isExpiringSoon ? '<span class="badge bg-warning ms-1">Expiring Soon</span>' : ''}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Storage Temp:</strong></td>
+                        <td>${vaccine.storage_temperature || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Doses per Vial:</strong></td>
+                        <td>${vaccine.doses_per_vial || 1}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Minimum Stock:</strong></td>
+                        <td>${vaccine.minimum_stock || 'N/A'}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        ${vaccine.description && vaccine.description !== 'No description available' ? `
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6 class="text-muted">Description</h6>
+                <p>${vaccine.description}</p>
+            </div>
+        </div>
+        ` : ''}
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert ${getStockAlertClass(vaccine.status)}">
+                    <div class="d-flex align-items-center">
+                        <i class="fas ${getStockIcon(vaccine.status)} me-2"></i>
+                        <div>
+                            <strong>${getStockStatusText(vaccine.status)}</strong>
+                            <div class="small">${getStockMessage(vaccine.status, vaccine.current_stock)}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('vaccineDetailsContent').innerHTML = content;
+}
+
+// Show Edit Vaccine Modal
+function showEditVaccineModal(vaccineId) {
+    currentVaccineId = vaccineId;
+    
+    // Show loading state
+    document.getElementById('editVaccineContent').innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading vaccine data...</p>
+        </div>
+    `;
+    
+    // Fetch vaccine details for editing
+    fetch(`/api/vaccines/${vaccineId}/`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch vaccine details');
+            }
+            return response.json();
+        })
+        .then(vaccine => {
+            populateEditForm(vaccine);
+        })
+        .catch(error => {
+            console.error('Error fetching vaccine details:', error);
+            document.getElementById('editVaccineContent').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error loading vaccine data: ${error.message}
+                </div>
+            `;
+        });
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('editVaccineModal'));
+    modal.show();
+}
+
+// Populate Edit Form with vaccine data
+function populateEditForm(vaccine) {
+    const formHTML = `
+        <form id="editVaccineForm">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="editVaccineName" class="form-label">Vaccine Name</label>
+                    <input type="text" class="form-control" id="editVaccineName" value="${vaccine.name || ''}" readonly>
+                    <div class="form-text">Vaccine name cannot be changed</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="editVaccineType" class="form-label">Vaccine Type</label>
+                    <input type="text" class="form-control" id="editVaccineType" value="${vaccine.vaccine_type_display || vaccine.vaccine_type || ''}" readonly>
+                    <div class="form-text">Vaccine type cannot be changed</div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="editManufacturer" class="form-label">Manufacturer</label>
+                    <input type="text" class="form-control" id="editManufacturer" value="${vaccine.manufacturer || ''}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="editLotNumber" class="form-label">Lot Number *</label>
+                    <input type="text" class="form-control" id="editLotNumber" value="${vaccine.lot_number || ''}" required>
+                    <div class="form-text">Manufacturer's batch/lot number</div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="editCurrentStock" class="form-label">Current Stock *</label>
+                    <input type="number" class="form-control" id="editCurrentStock" value="${vaccine.current_stock}" min="0" required>
+                    <div class="form-text">Current number of doses available</div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="editMinStock" class="form-label">Minimum Stock Level *</label>
+                    <input type="number" class="form-control" id="editMinStock" value="${vaccine.minimum_stock || vaccine.min_stock_level || 10}" min="1" required>
+                    <div class="form-text">Alert when stock falls below this level</div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="editDosesPerVial" class="form-label">Doses per Vial *</label>
+                    <input type="number" class="form-control" id="editDosesPerVial" value="${vaccine.doses_per_vial || 1}" min="1" required>
+                    <div class="form-text">Number of doses in each vial/container</div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="editExpiryDate" class="form-label">Expiry Date *</label>
+                    <input type="date" class="form-control" id="editExpiryDate" value="${vaccine.expiration_date || ''}" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="editStorageTemp" class="form-label">Storage Temperature *</label>
+                    <input type="text" class="form-control" id="editStorageTemp" value="${vaccine.storage_temperature || ''}" required>
+                    <div class="form-text">Required storage temperature range</div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="editDescription" class="form-label">Description</label>
+                <textarea class="form-control" id="editDescription" rows="3">${vaccine.description || ''}</textarea>
+            </div>
+            
+            <div class="mb-3">
+                <label for="editTargetDiseases" class="form-label">Target Diseases</label>
+                <input type="text" class="form-control" id="editTargetDiseases" value="${vaccine.target_diseases || ''}">
+            </div>
+        </form>
+        <div class="alert alert-info">
+            <small><i class="fas fa-info-circle me-2"></i>Fields marked with * are required</small>
+        </div>
+    `;
+    
+    document.getElementById('editVaccineContent').innerHTML = formHTML;
+    
+    // Set minimum date for expiry date field
+    const expiryDateField = document.getElementById('editExpiryDate');
+    if (expiryDateField) {
+        const today = new Date().toISOString().split('T')[0];
+        expiryDateField.min = today;
+    }
+}
+
+// Save edited vaccine
+function saveEditedVaccine() {
+    const saveBtn = document.getElementById('saveEditedVaccine');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    saveBtn.disabled = true;
+
+    const formData = {
+        current_stock: parseInt(document.getElementById('editCurrentStock').value),
+        min_stock_level: parseInt(document.getElementById('editMinStock').value),
+        expiration_date: document.getElementById('editExpiryDate').value,
+        storage_temperature: document.getElementById('editStorageTemp').value,
+        description: document.getElementById('editDescription').value,
+        lot_number: document.getElementById('editLotNumber').value,
+        manufacturer: document.getElementById('editManufacturer').value,
+        target_diseases: document.getElementById('editTargetDiseases').value,
+        doses_per_vial: parseInt(document.getElementById('editDosesPerVial').value)
+    };
+
+    // Validate required fields
+    if (!formData.lot_number || !formData.expiration_date || !formData.storage_temperature) {
+        showAlert('Please fill in all required fields.', 'danger');
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+        return;
+    }
+
+    // Validate numbers
+    if (formData.current_stock < 0 || formData.min_stock_level < 1 || formData.doses_per_vial < 1) {
+        showAlert('Please enter valid numbers for stock levels and doses per vial.', 'danger');
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+        return;
+    }
+
+    // Validate expiry date
+    const today = new Date().toISOString().split('T')[0];
+    if (formData.expiration_date < today) {
+        showAlert('Expiry date cannot be in the past.', 'danger');
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+        return;
+    }
+
+    // Send update to Django backend
+    fetch(`/api/vaccines/${currentVaccineId}/update/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Update failed');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message || 'Vaccine updated successfully!', 'success');
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editVaccineModal'));
+            modal.hide();
+            
+            // Reload the page to show updated data
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            throw new Error(data.message || data.error || 'Update failed');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating vaccine:', error);
+        showAlert(`Error updating vaccine: ${error.message}`, 'danger');
+    })
+    .finally(() => {
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    });
+}
+
+// Confirm delete vaccine
+function confirmDeleteVaccine(vaccineId, vaccineName) {
+    currentVaccineId = vaccineId;
+    document.getElementById('deleteVaccineName').textContent = vaccineName;
+    
+    const modal = new bootstrap.Modal(document.getElementById('deleteVaccineModal'));
+    modal.show();
+}
+
+// Delete vaccine from database - Using your existing API endpoint
+function deleteVaccine(vaccineId) {
+    const deleteBtn = document.getElementById('confirmDeleteVaccine');
+    const originalText = deleteBtn.innerHTML;
+    deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+    deleteBtn.disabled = true;
+
+    // Delete from Django backend - using your existing endpoint
+    fetch(`/api/vaccines/${vaccineId}/delete/`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Delete failed');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Remove vaccine from UI
+            removeVaccineFromUI(vaccineId);
+            showAlert(data.message || 'Vaccine deleted successfully!', 'success');
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteVaccineModal'));
+            modal.hide();
+            
+            // Update stats
+            updateInventoryStats();
+        } else {
+            throw new Error(data.message || data.error || 'Delete failed');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting vaccine:', error);
+        showAlert(`Error deleting vaccine: ${error.message}`, 'danger');
+    })
+    .finally(() => {
+        deleteBtn.innerHTML = originalText;
+        deleteBtn.disabled = false;
+    });
+}
+
+// Remove vaccine from UI after deletion
+function removeVaccineFromUI(vaccineId) {
+    // Remove from table
+    const tableRow = document.querySelector(`.vaccine-row[data-vaccine-id="${vaccineId}"]`);
+    if (tableRow) {
+        tableRow.remove();
+    }
+    
+    // Remove from card view
+    const cardItem = document.querySelector(`.vaccine-card-item[data-vaccine-id="${vaccineId}"]`);
+    if (cardItem) {
+        cardItem.remove();
+    }
+    
+    // If no vaccines left, show empty state
+    const remainingVaccines = document.querySelectorAll('.vaccine-row').length;
+    if (remainingVaccines === 0) {
+        showEmptyState();
+    }
+}
+
+// Show empty state when no vaccines
+function showEmptyState() {
+    const tableBody = document.querySelector('#vaccineTable tbody');
+    const cardsContainer = document.querySelector('.row.mt-4');
+    
+    const emptyStateHTML = `
+        <tr>
+            <td colspan="7" class="text-center py-4">
+                <div class="text-muted">
+                    <i class="fas fa-inbox fa-2x mb-2"></i>
+                    <p>No vaccine inventory found.</p>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newVaccineModal">
+                        <i class="fas fa-plus me-1"></i> Add First Vaccine
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `;
+    
+    if (tableBody) {
+        tableBody.innerHTML = emptyStateHTML;
+    }
+    
+    if (cardsContainer) {
+        cardsContainer.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <div class="text-muted">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <h4>No vaccines in inventory</h4>
+                    <p class="mb-3">Get started by adding your first vaccine to the inventory.</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newVaccineModal">
+                        <i class="fas fa-plus me-1"></i> Add First Vaccine
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Filter functionality
+function filterVaccines(filter) {
+    const rows = document.querySelectorAll('.vaccine-row, .vaccine-card-item');
+    const today = new Date();
+    
+    rows.forEach(row => {
+        const status = row.getAttribute('data-status');
+        const expiryDate = new Date(row.getAttribute('data-expiry'));
+        const thirtyDaysFromNow = new Date();
+        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+        
+        switch (filter) {
+            case 'all':
+                row.style.display = '';
+                break;
+            case 'low_stock':
+                if (status === 'low_stock' || status === 'critical') {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+                break;
+            case 'expiring_soon':
+                if (expiryDate <= thirtyDaysFromNow && expiryDate >= today) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+                break;
+        }
+    });
+}
+
+// Search functionality
+function searchVaccines(searchTerm) {
+    const rows = document.querySelectorAll('.vaccine-row, .vaccine-card-item');
+    
+    if (searchTerm === '') {
+        rows.forEach(row => row.style.display = '');
+        return;
+    }
+    
+    rows.forEach(row => {
+        const vaccineName = row.querySelector('.vaccine-name').textContent.toLowerCase();
+        const vaccineType = row.querySelector('.vaccine-type').textContent.toLowerCase();
+        const vaccineDiseases = row.querySelector('.vaccine-diseases') ? 
+                              row.querySelector('.vaccine-diseases').textContent.toLowerCase() : '';
+        
+        if (vaccineName.includes(searchTerm) || vaccineType.includes(searchTerm) || vaccineDiseases.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Helper functions
+function getStockBadgeClass(status) {
+    switch (status) {
+        case 'in_stock': return 'bg-success';
+        case 'low_stock': return 'bg-warning';
+        case 'critical': return 'bg-danger';
+        case 'out_of_stock': return 'bg-secondary';
+        default: return 'bg-secondary';
+    }
+}
+
+function getStockAlertClass(status) {
+    switch (status) {
+        case 'in_stock': return 'alert-success';
+        case 'low_stock': return 'alert-warning';
+        case 'critical': return 'alert-danger';
+        case 'out_of_stock': return 'alert-secondary';
+        default: return 'alert-secondary';
+    }
+}
+
+function getStockIcon(status) {
+    switch (status) {
+        case 'in_stock': return 'fa-check-circle';
+        case 'low_stock': return 'fa-exclamation-triangle';
+        case 'critical': return 'fa-exclamation-circle';
+        case 'out_of_stock': return 'fa-times-circle';
+        default: return 'fa-info-circle';
+    }
+}
+
+function getStockStatusText(status) {
+    switch (status) {
+        case 'in_stock': return 'Stock Level Good';
+        case 'low_stock': return 'Low Stock Warning';
+        case 'critical': return 'Critical Stock Level';
+        case 'out_of_stock': return 'Out of Stock';
+        default: return 'Stock Status Unknown';
+    }
+}
+
+function getStockMessage(status, currentStock) {
+    switch (status) {
+        case 'in_stock': return `You have ${currentStock} doses available. Stock level is sufficient.`;
+        case 'low_stock': return `You have ${currentStock} doses remaining. Consider reordering soon.`;
+        case 'critical': return `Only ${currentStock} doses left! Emergency reorder required.`;
+        case 'out_of_stock': return `No doses available. Please restock immediately.`;
+        default: return 'Stock status information not available.';
+    }
+}
+
+function showAlert(message, type) {
+    // Remove existing alerts
+    document.querySelectorAll('.alert-dismissible').forEach(alert => alert.remove());
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Add alert to the top of the inventory section
+    const inventorySection = document.getElementById('inventory');
+    if (inventorySection) {
+        const firstChild = inventorySection.querySelector('.d-flex.justify-content-between');
+        if (firstChild) {
+            inventorySection.insertBefore(alertDiv, firstChild.nextSibling);
+        } else {
+            inventorySection.insertBefore(alertDiv, inventorySection.firstChild);
+        }
+    }
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+function updateInventoryStats() {
+    // This function would update the stats cards
+    // You can implement this based on your needs
+    console.log('Stats updated');
+}
+
+// CSRF token helper function for Django
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}</script>
