@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="list-group">
+                <a href="?tab=general" class="list-group-item list-group-item-action active" data-tab="general">
+                    <i class="fas fa-cog me-2"></i>General Settings
+                </a>
+                <a href="?tab=display" class="list-group-item list-group-item-action" data-tab="display">
+                    <i class="fas fa-palette me-2"></i>Display
+                </a>
+                <a href="?tab=password" class="list-group-item list-group-item-action" data-tab="password">
+                    <i class="fas fa-key me-2"></i>Change Password
+                </a>
+                <a href="?tab=language" class="list-group-item list-group-item-action" data-tab="language">
+                    <i class="fas fa-language me-2"></i>Language
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <!-- General Settings Tab -->
+            <div id="general-tab" class="settings-tab active">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">General Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Account Information</h6>
+                                <p><strong>Username:</strong> {{ user.username }}</p>
+                                <p><strong>Name:</strong> {{ user.get_full_name|default:"Not set" }}</p>
+                                <p><strong>Email:</strong> {{ user.email|default:"Not set" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>System Information</h6>
+                                <p><strong>Role:</strong> 
+                                    {% if user.is_staff %}Administrator
+                                    {% elif user.userprofile.user_type %}{{ user.userprofile.get_user_type_display }}
+                                    {% else %}User{% endif %}
+                                </p>
+                                <p><strong>Joined:</strong> {{ user.date_joined|date:"F d, Y" }}</p>
+                                <p><strong>Last Login:</strong> {{ user.last_login|date:"F d, Y H:i"|default:"Never" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Display Settings Tab -->
+            <div id="display-tab" class="settings-tab" style="display: none;">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Display Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="{% url 'display_settings' %}" id="displayForm">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label">Theme</label>
+                                <select name="theme" class="form-control" id="themeSelect">
+                                    <option value="light" {% if theme == 'light' %}selected{% endif %}>Light</option>
+                                    <option value="dark" {% if theme == 'dark' %}selected{% endif %}>Dark</option>
+                                    <option value="auto" {% if theme == 'auto' %}selected{% endif %}>Auto (System)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Font Size</label>
+                                <select name="font_size" class="form-control" id="fontSizeSelect">
+                                    <option value="small" {% if font_size == 'small' %}selected{% endif %}>Small</option>
+                                    <option value="medium" {% if font_size == 'medium' %}selected{% endif %}>Medium</option>
+                                    <option value="large" {% if font_size == 'large' %}selected{% endif %}>Large</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Preview</label>
+                                <div class="alert alert-info" id="preview">
+                                    This is how text will look with your selected settings
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Display Settings</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Change Password Tab -->
+            <div id="password-tab" class="settings-tab" style="display: none;">
+                <div class="card">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0">Change Password</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="{% url 'change_password' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label">Current Password</label>
+                                <input type="password" name="old_password" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">New Password</label>
+                                <input type="password" name="new_password1" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Confirm New Password</label>
+                                <input type="password" name="new_password2" class="form-control" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Change Password</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Language Settings Tab -->
+            <div id="language-tab" class="settings-tab" style="display: none;">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Language Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="{% url 'change_language' %}" id="languageForm">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label">Select Language</label>
+                                <select name="language" class="form-control" id="languageSelect">
+                                    <option value="en" {% if language == 'en' %}selected{% endif %}>English</option>
+                                    <option value="fr" {% if language == 'fr' %}selected{% endif %}>Français (French)</option>
+                                    <option value="es" {% if language == 'es' %}selected{% endif %}>Español (Spanish)</option>
+                                    <option value="rw" {% if language == 'rw' %}selected{% endif %}>Kinyarwanda</option>
+                                </select>
+                            </div>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> Language change will take effect immediately
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Language</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Live preview for display settings
+const themeSelect = document.getElementById('themeSelect');
+const fontSizeSelect = document.getElementById('fontSizeSelect');
+const preview = document.getElementById('preview');
+
+function updatePreview() {
+    const theme = themeSelect.value;
+    const fontSize = fontSizeSelect.value;
+    
+    // Apply preview
+    if (theme === 'dark') {
+        preview.style.backgroundColor = '#2d2d2d';
+        preview.style.color = '#ffffff';
+        preview.style.borderColor = '#404040';
+    } else {
+        preview.style.backgroundColor = '#cfe2ff';
+        preview.style.color = '#084298';
+        preview.style.borderColor = '#b6d4fe';
+    }
+    
+    preview.style.fontSize = fontSize === 'small' ? '14px' : fontSize === 'large' ? '18px' : '16px';
+}
+
+if (themeSelect && fontSizeSelect) {
+    themeSelect.addEventListener('change', updatePreview);
+    fontSizeSelect.addEventListener('change', updatePreview);
+    updatePreview();
+}
+
+// Language change with page reload
+const languageForm = document.getElementById('languageForm');
+if (languageForm) {
+    languageForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            }
+        });
+        return false;
+    });
+}
+
+// Display form submission with live update
+const displayForm = document.getElementById('displayForm');
+if (displayForm) {
+    displayForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        }).then(response => {
+            if (response.ok) {
+                // Apply settings immediately
+                const theme = formData.get('theme');
+                const fontSize = formData.get('font_size');
+                
+                if (typeof window.updateSettings === 'function') {
+                    window.updateSettings(theme, fontSize);
+                }
+                
+                // Show success message
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                alertDiv.innerHTML = 'Settings updated successfully! <button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+                document.querySelector('.card-body').insertBefore(alertDiv, displayForm);
+                
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 3000);
+            }
+        });
+        return false;
+    });
+}
+
+// Tab switching functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('.list-group-item');
+    const tabContents = document.querySelectorAll('.settings-tab');
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    let activeTab = urlParams.get('tab') || 'general';
+    
+    function showTab(tabId) {
+        tabContents.forEach(content => {
+            content.style.display = 'none';
+        });
+        
+        const selectedTab = document.getElementById(`${tabId}-tab`);
+        if (selectedTab) {
+            selectedTab.style.display = 'block';
+        }
+        
+        tabs.forEach(tab => {
+            tab.classList.remove('active');
+            if (tab.getAttribute('data-tab') === tabId) {
+                tab.classList.add('active');
+            }
+        });
+        
+        const newUrl = `${window.location.pathname}?tab=${tabId}`;
+        window.history.pushState({}, '', newUrl);
+    }
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            const tabId = this.getAttribute('data-tab');
+            showTab(tabId);
+        });
+    });
+    
+    showTab(activeTab);
+});
+</script>
+
+<style>
+.settings-tab {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.list-group-item.active {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.list-group-item i {
+    width: 20px;
+}
+</style>
+{% endblock %}

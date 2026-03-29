@@ -1,0 +1,304 @@
+{% load static %}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-syringe me-2"></i>
+        Vaccination History & Schedule
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="fas fa-download me-1"></i> Download Certificate
+        </button>
+    </div>
+</div>
+
+<style>
+    .vaccination-timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    .vaccination-timeline::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e9ecef;
+    }
+    .timeline-item {
+        position: relative;
+        margin-bottom: 25px;
+    }
+    .timeline-marker {
+        position: absolute;
+        left: -36px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 3px solid white;
+    }
+    .timeline-content {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+    }
+    .timeline-item.completed .timeline-content {
+        border-left-color: #28a745;
+    }
+    .timeline-item.upcoming .timeline-content {
+        border-left-color: #ffc107;
+    }
+</style>
+
+<!-- Vaccination Status Summary -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Completed Vaccines</h6>
+                        <h3 class="card-number">{{ completed_count|default:"0" }}</h3>
+                        <span class="text-success">
+                            <i class="fas fa-check-circle me-1"></i> Up to date
+                        </span>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Upcoming Vaccines</h6>
+                        <h3 class="card-number">{{ upcoming_count|default:"0" }}</h3>
+                        <span class="text-warning">
+                            <i class="fas fa-clock me-1"></i> Scheduled
+                        </span>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-plus"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Due This Month</h6>
+                        <h3 class="card-number">{{ due_this_month|default:"0" }}</h3>
+                        <span class="text-info">
+                            <i class="fas fa-bell me-1"></i> Reminder set
+                        </span>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Overdue</h6>
+                        <h3 class="card-number">{{ overdue_count|default:"0" }}</h3>
+                        <span class="text-danger">
+                            <i class="fas fa-exclamation-triangle me-1"></i> Action needed
+                        </span>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vaccination Timeline -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-history me-2"></i>
+            Your Vaccination Timeline
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="vaccination-timeline">
+            {% for record in vaccination_data %}
+            <div class="timeline-item {% if record.status == 'completed' %}completed{% elif record.status == 'upcoming' %}upcoming{% endif %}">
+                <div class="timeline-marker {% if record.status == 'completed' %}bg-success{% elif record.status == 'upcoming' %}bg-warning{% else %}bg-info{% endif %}"></div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between">
+                        <h6>{{ record.name }}</h6>
+                        <span class="badge {% if record.status == 'completed' %}bg-success{% elif record.status == 'upcoming' %}bg-warning{% else %}bg-info{% endif %}">
+                            {% if record.status == 'completed' %}Completed{% elif record.status == 'upcoming' %}Scheduled{% else %}Due Soon{% endif %}
+                        </span>
+                    </div>
+                    <p class="mb-1"><strong>Date:</strong> {{ record.date_given }}</p>
+                    <p class="mb-1"><strong>Location:</strong> {{ record.location }}</p>
+                    <p class="mb-0"><strong>Batch No:</strong> {{ record.batch_no }}</p>
+                    {% if record.status == 'upcoming' %}
+                    <div class="mt-2">
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="openScheduleModal()">Reschedule</button>
+                        <button class="btn btn-sm btn-outline-success">Confirm</button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-4">
+                <p class="text-muted">No vaccination records found.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Complete Vaccination Schedule Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-table me-2"></i>
+            Complete Vaccination Schedule
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Vaccine</th>
+                        <th>Dose</th>
+                        <th>Status</th>
+                        <th>Date Given</th>
+                        <th>Next Dose Due</th>
+                        <th>Location</th>
+                        <th>Batch No</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in vaccination_data %}
+                    <tr>
+                        <td><strong>{{ record.name }}</strong></td>
+                        <td>{{ record.type }}</td>
+                        <td>
+                            {% if record.status == 'completed' %}
+                                <span class="badge bg-success">Completed</span>
+                            {% elif record.status == 'upcoming' %}
+                                <span class="badge bg-warning">Scheduled</span>
+                            {% else %}
+                                <span class="badge bg-info">Due Soon</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ record.date_given }}</td>
+                        <td>{{ record.next_dose }}</td>
+                        <td>{{ record.location }}</td>
+                        <td><small class="text-muted">{{ record.batch_no }}</small></td>
+                        <td>
+                            {% if record.status == 'completed' %}
+                                <button class="btn btn-sm btn-outline-info" onclick="viewCertificate({{ record.id }})">
+                                    <i class="fas fa-certificate me-1"></i> Certificate
+                                </button>
+                            {% else %}
+                                <button class="btn btn-sm btn-primary" onclick="openScheduleModal()">
+                                    <i class="fas fa-calendar me-1"></i> Schedule
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            No vaccination records found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Vaccination Modal -->
+<div class="modal fade" id="scheduleVaccinationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Schedule Vaccination</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'schedule_vaccination' %}" id="scheduleForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Select Vaccine</label>
+                        <select name="vaccine_id" class="form-select" required>
+                            <option value="">Choose a Vaccine</option>
+                            {% for vaccine in vaccines %}
+                            <option value="{{ vaccine.id }}">{{ vaccine.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Scheduled Date</label>
+                        <input type="date" name="scheduled_date" class="form-control" required min="{% now 'Y-m-d' %}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Preferred Location</label>
+                        <input type="text" name="location" class="form-control" placeholder="Hospital/Clinic name">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="Any special notes or requirements..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Schedule Vaccination</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openScheduleModal() {
+    const modal = new bootstrap.Modal(document.getElementById('scheduleVaccinationModal'));
+    modal.show();
+}
+
+function viewCertificate(recordId) {
+    window.open(`/vaccination/certificate/${recordId}/`, '_blank');
+}
+
+// Add event listeners to schedule buttons
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-primary').forEach(button => {
+        if (button.textContent.includes('Schedule') || button.textContent.includes('Reschedule')) {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                openScheduleModal();
+            });
+        }
+    });
+});
+</script>

@@ -1,0 +1,441 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard - HealthCoach</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body class="dashboard-body">
+    <!-- Authentication Check -->
+    {% if not user.is_authenticated %}
+        <script>
+            window.location.href = "{% url 'login' %}";
+        </script>
+    {% endif %}
+
+    <!-- Top Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark dashboard-nav">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'index' %}">
+                <i class="fas fa-heartbeat me-2"></i>
+                HealthCoach <span class="brand-subtitle">Patient Portal</span>
+            </a>
+            
+            <div class="d-flex align-items-center">
+                <!-- Notifications -->
+                <div class="dropdown me-3">
+                    <button class="btn btn-light btn-sm dropdown-toggle position-relative" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-bell"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            {{ notifications_count|default:0 }}
+                        </span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><h6 class="dropdown-header">Health Notifications</h6></li>
+                        {% if notifications %}
+                            {% for notification in notifications %}
+                            <li><a class="dropdown-item" href="#">{{ notification }}</a></li>
+                            {% endfor %}
+                        {% else %}
+                            <li class="dropdown-item text-muted">No notifications</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                <!-- User Menu -->
+                <div class="dropdown">
+                    <button class="btn btn-light btn-sm dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown">
+                        <img src="{% static 'img/patient-avatar.jpg' %}" 
+                             alt="User" class="rounded-circle me-2" width="32" height="32"
+                             onerror="this.onerror=null; this.src='{% static 'img/default-avatar.png' %}';">
+                        {{ user.get_full_name|default:user.username }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{% url 'patient_profile' %}"><i class="fas fa-user me-2"></i>My Profile</a></li>
+                        <li><a class="dropdown-item" href="{% url 'consultation' %}"><i class="fas fa-stethoscope me-2"></i>Symptom Checker</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form method="post" action="{% url 'logout' %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Patient Sidebar -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{% url 'patient_dashboard' %}">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                My Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'consultation' %}">
+                                <i class="fas fa-stethoscope me-2"></i>
+                                Symptom Checker
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'appointments' %}">
+                                <i class="fas fa-calendar-check me-2"></i>
+                                My Appointments
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'prescriptions' %}">
+                                <i class="fas fa-prescription me-2"></i>
+                                My Prescriptions
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'vaccination_history' %}">
+                                <i class="fas fa-syringe me-2"></i>
+                                Vaccination History
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'medical_records' %}">
+                                <i class="fas fa-file-medical me-2"></i>
+                                Medical Records
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- Quick Actions -->
+                    <div class="quick-actions mt-4">
+                        <h6 class="sidebar-heading">Quick Actions</h6>
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'consultation' %}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-comment-medical me-1"></i> Consult Doctor
+                            </a>
+                            <a href="{% url 'download_medical_record' %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-download me-1"></i> Download Records
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Welcome Section -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <div>
+                        <h1 class="h2">Welcome, {{ user.get_full_name|default:user.username }}!</h1>
+                        <p class="text-muted">Here's your health overview and recent activities</p>
+                    </div>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <a href="{% url 'consultation' %}" class="btn btn-primary">
+                            <i class="fas fa-comment-medical me-1"></i> Start Consultation
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Patient Stats -->
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">Upcoming Appointments</h6>
+                                        <h3 class="card-number">{{ upcoming_appointments_count|default:0 }}</h3>
+                                        <span class="text-info">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            {% if recent_appointments and recent_appointments.0 %}
+                                                Next: {{ recent_appointments.0.scheduled_date|date:"M j, Y" }}
+                                            {% else %}
+                                                No upcoming
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="stat-icon">
+                                        <i class="fas fa-calendar-check"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">Active Prescriptions</h6>
+                                        <h3 class="card-number">{{ recent_prescriptions_count|default:0 }}</h3>
+                                        <span class="text-warning">
+                                            <i class="fas fa-pills me-1"></i>
+                                            {% if recent_prescriptions_count %}Some may need refill{% else %}None{% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="stat-icon">
+                                        <i class="fas fa-prescription"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">Vaccinations Due</h6>
+                                        <h3 class="card-number">{{ vaccination_records_count|default:0 }}</h3>
+                                        <span class="text-success">
+                                            <i class="fas fa-syringe me-1"></i>
+                                            <a href="{% url 'vaccination_history' %}" class="text-success text-decoration-none">Check vaccination history</a>
+                                        </span>
+                                    </div>
+                                    <div class="stat-icon">
+                                        <i class="fas fa-syringe"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">Total Consultations</h6>
+                                        <h3 class="card-number">{{ total_consultations|default:0 }}</h3>
+                                        <span class="text-primary">
+                                            <i class="fas fa-stethoscope me-1"></i> All time
+                                        </span>
+                                    </div>
+                                    <div class="stat-icon">
+                                        <i class="fas fa-stethoscope"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity & Upcoming Appointments -->
+                <div class="row">
+                    <!-- Recent Activity -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="card-title mb-0">Recent Health Activity</h6>
+                                <a href="{% url 'medical_records' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                            </div>
+                            <div class="card-body">
+                                <div class="activity-list">
+                                    {% if recent_activities %}
+                                        {% for activity in recent_activities %}
+                                        <div class="activity-item">
+                                            <div class="activity-icon {{ activity.icon_class }}">
+                                                <i class="fas {{ activity.icon }}"></i>
+                                            </div>
+                                            <div class="activity-content">
+                                                <p class="activity-text">{{ activity.text }}</p>
+                                                <small class="text-muted">{{ activity.time }}</small>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="activity-item">
+                                            <div class="activity-icon info">
+                                                <i class="fas fa-info-circle"></i>
+                                            </div>
+                                            <div class="activity-content">
+                                                <p class="activity-text">No recent activity</p>
+                                                <small class="text-muted">Start by consulting a doctor</small>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upcoming Appointments -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="card-title mb-0">Upcoming Appointments</h6>
+                                <a href="{% url 'appointments' %}" class="btn btn-sm btn-outline-primary">Schedule New</a>
+                            </div>
+                            <div class="card-body">
+                                <div class="appointment-list">
+                                    {% if recent_appointments %}
+                                        {% for appt in recent_appointments %}
+                                        <div class="appointment-item">
+                                            <div class="appointment-time">
+                                                <span class="time">{{ appt.scheduled_date|date:"g:i A" }}</span>
+                                                <span class="badge bg-primary">{{ appt.get_appointment_type_display }}</span>
+                                            </div>
+                                            <div class="appointment-details">
+                                                <h6>{% if appt.assigned_doctor %}Dr. {{ appt.assigned_doctor.user.get_full_name|default:appt.assigned_doctor.user.username }}{% else %}TBD{% endif %}</h6>
+                                                <p class="text-muted mb-1">{{ appt.reason|default:appt.get_appointment_type_display }}</p>
+                                                <small class="text-muted">{{ appt.scheduled_date|date:"M j, Y" }} • {{ appt.scheduled_date|date:"g:i A" }}</small>
+                                            </div>
+                                            <div class="appointment-actions">
+                                                <a href="{% url 'appointments' %}" class="btn btn-sm btn-outline-primary">Details</a>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                                            <p class="text-muted">No upcoming appointments.</p>
+                                            <a href="{% url 'appointments' %}" class="btn btn-primary btn-sm">Schedule Now</a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Health Links -->
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <a href="{% url 'consultation' %}" class="card text-decoration-none h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-stethoscope fa-3x text-primary mb-3"></i>
+                                <h5>Symptom Checker</h5>
+                                <p class="text-muted">Describe your symptoms and get medical advice</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{% url 'prescriptions' %}" class="card text-decoration-none h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-prescription fa-3x text-success mb-3"></i>
+                                <h5>My Prescriptions</h5>
+                                <p class="text-muted">View and manage your current medications</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{% url 'medical_records' %}" class="card text-decoration-none h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-file-medical fa-3x text-info mb-3"></i>
+                                <h5>Health Records</h5>
+                                <p class="text-muted">Access your complete medical history</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <style>
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .activity-item {
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+        .activity-item:hover {
+            background-color: #f8f9fa;
+        }
+        .activity-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+        .activity-icon.completed {
+            background-color: #28a745;
+        }
+        .activity-icon.pending {
+            background-color: #ffc107;
+        }
+        .activity-icon.warning {
+            background-color: #dc3545;
+        }
+        .activity-icon.info {
+            background-color: #17a2b8;
+        }
+        .activity-content {
+            flex: 1;
+        }
+        .activity-text {
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+        .appointment-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .appointment-item:last-child {
+            border-bottom: none;
+        }
+        .appointment-time {
+            min-width: 80px;
+            text-align: center;
+        }
+        .appointment-time .time {
+            font-weight: bold;
+            display: block;
+        }
+        .appointment-details {
+            flex: 1;
+        }
+        .appointment-details h6 {
+            margin-bottom: 0.25rem;
+        }
+        .appointment-actions {
+            min-width: 70px;
+        }
+        .stat-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .stat-icon {
+            font-size: 2.5rem;
+            opacity: 0.3;
+        }
+        .card-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/dashboard.js' %}"></script>
+</body>
+</html>

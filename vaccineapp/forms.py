@@ -2,9 +2,19 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import UserProfile, Patient, Vaccine, VaccineInventory
+from .models import UserProfile, Patient, Vaccine, VaccineInventory, Recommendation
 from django.core.exceptions import ValidationError
 from datetime import date
+from .models import VaccinationSchedule
+
+# =============================================
+# YOUR COLLEAGUE'S ADDITIONAL MODEL IMPORTS
+# =============================================
+from .models import Appointment, Consultation, Prescription, Medication, MedicalRecord, VaccinationRecord
+
+# =============================================
+# YOUR EXISTING FORMS - KEPT EXACTLY AS THEY WERE
+# =============================================
 
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(
@@ -30,10 +40,28 @@ class CustomUserCreationForm(UserCreationForm):
             'placeholder': 'Enter your last name'
         })
     )
+    
+    # ========== NEW STATUS FIELD ==========
+    USER_STATUS_CHOICES = [
+        ('parent', '👪 Parent/Guardian'),
+        ('doctor', '👨‍⚕️ Doctor'),
+        ('nurse', '👩‍⚕️ Nurse'),
+        ('admin', '👑 Administrator'),
+    ]
+    
+    user_status = forms.ChoiceField(
+        choices=USER_STATUS_CHOICES,
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'user_status'
+        }),
+        label="I am a"
+    )
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')
+        fields = ('username', 'email', 'first_name', 'last_name', 'password1', 'password2', 'user_status')
         
         widgets = {
             'username': forms.TextInput(attrs={
@@ -53,6 +81,19 @@ class CustomUserCreationForm(UserCreationForm):
             'class': 'form-control', 
             'placeholder': 'Confirm your password'
         })
+        
+        # Add help text for status field
+        self.fields['user_status'].help_text = "Select your role to determine your permissions in the system."
+
+    def clean_user_status(self):
+        """Validate that a valid status is selected"""
+        user_status = self.cleaned_data.get('user_status')
+        valid_statuses = [choice[0] for choice in self.USER_STATUS_CHOICES]
+        
+        if user_status not in valid_statuses:
+            raise forms.ValidationError("Please select a valid user status.")
+        
+        return user_status
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -60,17 +101,36 @@ class CustomUserCreationForm(UserCreationForm):
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
         
+        # Get the selected user status
+        user_status = self.cleaned_data.get('user_status', 'parent')
+        
         if commit:
             user.save()
             
-            # Create a default patient record
-            Patient.objects.create(
+            # Create or update UserProfile with the user status
+            UserProfile.objects.update_or_create(
                 user=user,
-                first_name=user.first_name,
-                last_name=user.last_name,
-                date_of_birth='2000-01-01',  # Default, can be updated later
-                gender='O'
+                defaults={'user_type': user_status}
             )
+            
+            # Create a default patient record for parents
+            if user_status == 'parent':
+                Patient.objects.create(
+                    user=user,
+                    first_name=user.first_name,
+                    last_name=user.last_name,
+                    date_of_birth='2000-01-01',  # Default, can be updated later
+                    gender='U'
+                )
+            
+            # Set appropriate permissions based on user status
+            if user_status == 'admin':
+                user.is_staff = True
+                user.is_superuser = True
+                user.save()
+            elif user_status in ['doctor', 'nurse']:
+                user.is_staff = True
+                user.save()
         
         return user
 
@@ -284,3 +344,380 @@ class VaccineInventoryForm(forms.ModelForm):
             instance.save()
         
         return instance
+
+
+# =============================================
+# RECOMMENDATION FORM
+# =============================================
+
+class RecommendationForm(forms.ModelForm):
+    """
+    Form for creating and managing vaccine recommendations
+    """
+    
+    class Meta:
+        model = Recommendation
+        fields = [
+            'title', 'description', 'recommendation_type', 'priority', 'status',
+            'vaccine', 'vaccine_inventory', 'recommended_quantity', 'current_stock',
+            'estimated_cost', 'suggested_date', 'expiry_alert_date',
+            'justification', 'benefits', 'risks', 'implementation_notes',
+            'attachment', 'reference_link', 'is_automated', 'trigger_reason'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter recommendation title',
+                'required': 'required'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Describe the recommendation in detail...',
+                'required': 'required'
+            }),
+            'recommendation_type': forms.Select(attrs={
+                'class': 'form-select',
+                'required': 'required'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-select',
+                'required': 'required'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-select',
+                'required': 'required'
+            }),
+            'vaccine': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'vaccine_inventory': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'recommended_quantity': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter recommended quantity',
+                'min': '0'
+            }),
+            'current_stock': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Current stock level',
+                'min': '0',
+                'readonly': True
+            }),
+            'estimated_cost': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Estimated cost',
+                'step': '0.01',
+                'min': '0'
+            }),
+            'suggested_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'expiry_alert_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'justification': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Why is this recommendation needed? Provide business/medical justification...'
+            }),
+            'benefits': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'What are the expected benefits if implemented?'
+            }),
+            'risks': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'What are the potential risks if not implemented?'
+            }),
+            'implementation_notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'How should this recommendation be implemented?'
+            }),
+            'attachment': forms.FileInput(attrs={
+                'class': 'form-control'
+            }),
+            'reference_link': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://example.com'
+            }),
+            'is_automated': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'trigger_reason': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., low_stock, expiring_soon, high_usage'
+            }),
+        }
+        labels = {
+            'title': 'Recommendation Title *',
+            'description': 'Description *',
+            'recommendation_type': 'Recommendation Type *',
+            'priority': 'Priority Level *',
+            'status': 'Status *',
+            'vaccine': 'Related Vaccine',
+            'vaccine_inventory': 'Related Inventory Item',
+            'recommended_quantity': 'Recommended Quantity',
+            'current_stock': 'Current Stock',
+            'estimated_cost': 'Estimated Cost ($)',
+            'suggested_date': 'Suggested Implementation Date',
+            'expiry_alert_date': 'Expiry Alert Date',
+            'justification': 'Justification',
+            'benefits': 'Expected Benefits',
+            'risks': 'Potential Risks',
+            'implementation_notes': 'Implementation Notes',
+            'attachment': 'Supporting Document',
+            'reference_link': 'Reference Link',
+            'is_automated': 'This is an automated recommendation',
+            'trigger_reason': 'Trigger Reason',
+        }
+        help_texts = {
+            'vaccine': 'Select a vaccine if this recommendation is vaccine-specific',
+            'vaccine_inventory': 'Select an inventory item if this is about a specific batch',
+            'recommended_quantity': 'Number of doses to order (for restock recommendations)',
+            'current_stock': 'Current stock level (auto-filled if inventory selected)',
+            'estimated_cost': 'Estimated cost in USD',
+            'suggested_date': 'When should this be implemented?',
+            'expiry_alert_date': 'If related to expiring vaccines',
+            'attachment': 'Upload supporting documents (PDF, images, etc.)',
+            'is_automated': 'Check if this was generated automatically by the system',
+            'trigger_reason': 'What triggered this automated recommendation?',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Filter querysets to show only active items
+        self.fields['vaccine'].queryset = Vaccine.objects.filter(is_active=True)
+        self.fields['vaccine'].required = False
+        
+        self.fields['vaccine_inventory'].queryset = VaccineInventory.objects.all()
+        self.fields['vaccine_inventory'].required = False
+        
+        # Set default values for new recommendations
+        if not self.instance.pk:  # If creating new object
+            self.fields['status'].initial = 'pending'
+            self.fields['priority'].initial = 'medium'
+        
+        # Make current_stock readonly (will be auto-filled)
+        self.fields['current_stock'].widget.attrs['readonly'] = True
+        
+        # Add CSS classes for better styling
+        for field_name, field in self.fields.items():
+            if field_name not in ['is_automated', 'attachment']:
+                if field_name in ['description', 'justification', 'benefits', 'risks', 'implementation_notes']:
+                    field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' rich-textarea'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # Validate that if restock type, recommended_quantity is provided
+        rec_type = cleaned_data.get('recommendation_type')
+        recommended_quantity = cleaned_data.get('recommended_quantity')
+        
+        if rec_type == 'restock' and not recommended_quantity:
+            raise forms.ValidationError({
+                'recommended_quantity': 'Recommended quantity is required for restock recommendations.'
+            })
+        
+        # Validate that if expiring type, expiry_alert_date is provided
+        if rec_type == 'expiring' and not cleaned_data.get('expiry_alert_date'):
+            raise forms.ValidationError({
+                'expiry_alert_date': 'Expiry alert date is required for expiring vaccine recommendations.'
+            })
+        
+        # Validate dates
+        suggested_date = cleaned_data.get('suggested_date')
+        expiry_date = cleaned_data.get('expiry_alert_date')
+        today = date.today()
+        
+        if suggested_date and suggested_date < today:
+            raise forms.ValidationError({
+                'suggested_date': 'Suggested date cannot be in the past.'
+            })
+        
+        if expiry_date and expiry_date < today:
+            raise forms.ValidationError({
+                'expiry_alert_date': 'Expiry alert date cannot be in the past.'
+            })
+        
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Auto-fill current_stock if vaccine_inventory is selected
+        if instance.vaccine_inventory and not instance.current_stock:
+            instance.current_stock = instance.vaccine_inventory.current_stock
+        
+        # Auto-generate title if not provided
+        if not instance.title and instance.vaccine:
+            if instance.recommendation_type == 'restock':
+                instance.title = f"Restock {instance.vaccine.name}"
+            elif instance.recommendation_type == 'expiring':
+                instance.title = f"Expiring {instance.vaccine.name}"
+            else:
+                instance.title = f"Recommendation for {instance.vaccine.name}"
+        
+        if commit:
+            instance.save()
+            # Save many-to-many relationships if any
+            self.save_m2m()
+        
+        return instance
+
+
+# =============================================
+# YOUR COLLEAGUE'S ADDITIONAL FORMS - ADDED BELOW
+# =============================================
+
+class AppointmentForm(forms.ModelForm):
+    class Meta:
+        model = Appointment
+        fields = ['patient', 'appointment_type', 'scheduled_date', 'duration', 'reason', 'symptoms', 'assigned_doctor', 'vaccine']
+        widgets = {
+            'scheduled_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'reason': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'symptoms': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'patient': forms.Select(attrs={'class': 'form-control'}),
+            'appointment_type': forms.Select(attrs={'class': 'form-control'}),
+            'duration': forms.NumberInput(attrs={'class': 'form-control'}),
+            'assigned_doctor': forms.Select(attrs={'class': 'form-control'}),
+            'vaccine': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+
+class ConsultationForm(forms.ModelForm):
+    class Meta:
+        model = Consultation
+        fields = ['patient', 'doctor', 'symptoms', 'description', 'diagnosis', 'recommendations', 'follow_up_date']
+        widgets = {
+            'symptoms': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'diagnosis': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'recommendations': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'follow_up_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'patient': forms.Select(attrs={'class': 'form-control'}),
+            'doctor': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+
+class PrescriptionForm(forms.ModelForm):
+    class Meta:
+        model = Prescription
+        fields = ['patient', 'doctor', 'diagnosis', 'symptoms', 'medical_advice', 'follow_up', 'pharmacy_notes']
+        widgets = {
+            'diagnosis': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'symptoms': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'medical_advice': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'follow_up': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+            'pharmacy_notes': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+            'patient': forms.Select(attrs={'class': 'form-control'}),
+            'doctor': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+
+class MedicationForm(forms.ModelForm):
+    class Meta:
+        model = Medication
+        fields = ['name', 'dosage', 'frequency', 'duration', 'instructions', 'purpose']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'dosage': forms.TextInput(attrs={'class': 'form-control'}),
+            'frequency': forms.TextInput(attrs={'class': 'form-control'}),
+            'duration': forms.TextInput(attrs={'class': 'form-control'}),
+            'instructions': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+            'purpose': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+
+class MedicalRecordForm(forms.ModelForm):
+    class Meta:
+        model = MedicalRecord
+        fields = ['patient', 'full_name', 'date_of_birth', 'age', 'gender', 'blood_type', 
+                 'allergies', 'emergency_contact', 'address', 'phone', 'email', 
+                 'insurance_number', 'primary_physician']
+        widgets = {
+            'full_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'date_of_birth': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'age': forms.TextInput(attrs={'class': 'form-control'}),
+            'gender': forms.Select(attrs={'class': 'form-control'}),
+            'blood_type': forms.Select(attrs={'class': 'form-control'}),
+            'allergies': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+            'emergency_contact': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+            'address': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'insurance_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'primary_physician': forms.TextInput(attrs={'class': 'form-control'}),
+            'patient': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+
+class VaccinationRecordForm(forms.ModelForm):
+    class Meta:
+        model = VaccinationRecord
+        fields = ['patient', 'vaccine', 'dose_number', 'total_doses', 'date_administered', 
+                 'next_due_date', 'administered_by', 'administering_facility', 'lot_number', 
+                 'expiration_date', 'status', 'reaction', 'reaction_notes', 'notes']
+        widgets = {
+            'date_administered': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'next_due_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'expiration_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'administered_by': forms.TextInput(attrs={'class': 'form-control'}),
+            'administering_facility': forms.TextInput(attrs={'class': 'form-control'}),
+            'lot_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'reaction_notes': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+            'notes': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+            'patient': forms.Select(attrs={'class': 'form-control'}),
+            'vaccine': forms.Select(attrs={'class': 'form-control'}),
+            'dose_number': forms.NumberInput(attrs={'class': 'form-control'}),
+            'total_doses': forms.NumberInput(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'reaction': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+class VaccinationScheduleForm(forms.ModelForm):
+    class Meta:
+        model = VaccinationSchedule
+        fields = [
+            'title', 'description', 'vaccine', 'scheduled_date', 
+            'start_time', 'end_time', 'location', 'address',
+            'target_age_groups', 'is_for_all', 'max_capacity',
+            'requires_registration', 'is_published', 'notes',
+            'contact_phone', 'contact_email'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Monthly Childhood Vaccination Drive'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Describe the vaccination event...'}),
+            'vaccine': forms.Select(attrs={'class': 'form-select'}),
+            'scheduled_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Community Health Center'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Full address...'}),
+            'target_age_groups': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., 0-2 years, 5-12 years'}),
+            'is_for_all': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'max_capacity': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
+            'requires_registration': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_published': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Additional notes...'}),
+            'contact_phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., +1234567890'}),
+            'contact_email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'e.g., clinic@example.com'}),
+        }
+        labels = {
+            'target_age_groups': 'Target Age Groups',
+            'is_for_all': 'Available for all patients',
+            'max_capacity': 'Maximum Capacity (0 for unlimited)',
+            'requires_registration': 'Requires registration',
+            'is_published': 'Publish to patients',
+        }
+        help_texts = {
+            'target_age_groups': 'Comma-separated list of age groups (leave blank if for all)',
+            'max_capacity': 'Set to 0 for unlimited capacity',
+        }

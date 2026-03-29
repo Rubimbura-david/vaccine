@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Medical Record - {{ medical_data.personal_info.full_name }}</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 25px; 
+            line-height: 1.4;
+            color: #333;
+        }
+        .header { 
+            text-align: center; 
+            border-bottom: 3px solid #2c5aa0; 
+            padding-bottom: 15px; 
+            margin-bottom: 25px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .header h1 { 
+            margin: 0; 
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .header h2 { 
+            margin: 5px 0; 
+            font-size: 22px;
+            font-weight: normal;
+        }
+        .header p { 
+            margin: 5px 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .section { 
+            margin-bottom: 30px; 
+            page-break-inside: avoid;
+        }
+        .section-title { 
+            background: linear-gradient(135deg, #2c5aa0, #3a7bd5);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 12px 8px; 
+            text-align: left; 
+        }
+        th { 
+            background-color: #f8f9fa; 
+            font-weight: 600;
+            color: #2c5aa0;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .alert-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 12px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .vital-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .vital-item {
+            background: #e8f4fd;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .vital-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c5aa0;
+        }
+        .footer { 
+            margin-top: 40px; 
+            text-align: center; 
+            font-size: 12px; 
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+        }
+        .contact-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        @media print {
+            body { margin: 15px; }
+            .header { background: #2c5aa0 !important; -webkit-print-color-adjust: exact; }
+            th { background: #f8f9fa !important; -webkit-print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>COMPREHENSIVE MEDICAL RECORD</h1>
+        <h2>{{ medical_data.personal_info.full_name }}</h2>
+        <p>Date of Birth: {{ medical_data.personal_info.date_of_birth }} | Age: {{ medical_data.personal_info.age }}</p>
+        <p>Generated on: {{ download_date }}</p>
+    </div>
+
+    <!-- Personal Information -->
+    <div class="section">
+        <div class="section-title">PERSONAL INFORMATION</div>
+        
+        <div class="contact-info">
+            <table>
+                <tr>
+                    <th width="25%">Full Name</th>
+                    <td><strong>{{ medical_data.personal_info.full_name }}</strong></td>
+                    <th width="25%">Date of Birth</th>
+                    <td>{{ medical_data.personal_info.date_of_birth }}</td>
+                </tr>
+                <tr>
+                    <th>Age</th>
+                    <td>{{ medical_data.personal_info.age }}</td>
+                    <th>Gender</th>
+                    <td>{{ medical_data.personal_info.gender }}</td>
+                </tr>
+                <tr>
+                    <th>Blood Type</th>
+                    <td><strong style="color: #dc3545;">{{ medical_data.personal_info.blood_type }}</strong></td>
+                    <th>Primary Physician</th>
+                    <td>{{ medical_data.personal_info.primary_physician }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="alert-box">
+            <strong>⚠️ Important Medical Information:</strong><br>
+            <strong>Allergies:</strong> {{ medical_data.personal_info.allergies }}<br>
+            <strong>Emergency Contact:</strong> {{ medical_data.personal_info.emergency_contact }}<br>
+            <strong>Insurance Number:</strong> {{ medical_data.personal_info.insurance_number }}
+        </div>
+    </div>
+
+    <!-- Growth History -->
+    <div class="section">
+        <div class="section-title">GROWTH & DEVELOPMENT HISTORY</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Age</th>
+                    <th>Height</th>
+                    <th>Weight</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in medical_data.growth_history %}
+                <tr>
+                    <td>{{ record.date }}</td>
+                    <td>{{ record.age }}</td>
+                    <td><strong>{{ record.height }}</strong></td>
+                    <td><strong>{{ record.weight }}</strong></td>
+                    <td>
+                        {% if record.age == 'Birth' %}
+                        Initial measurements
+                        {% elif record.age == '4 years' %}
+                        Current measurements
+                        {% else %}
+                        Routine checkup
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Vaccination Records -->
+    <div class="section">
+        <div class="section-title">IMMUNIZATION RECORDS</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Vaccine</th>
+                    <th>Date Administered</th>
+                    <th>Dose</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vaccine in medical_data.vaccination_records %}
+                <tr>
+                    <td><strong>{{ vaccine.vaccine }}</strong></td>
+                    <td>{{ vaccine.date }}</td>
+                    <td>{{ vaccine.dose }}</td>
+                    <td style="color: #28a745;">● Completed</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div style="text-align: center; margin-top: 10px; font-size: 14px; color: #28a745;">
+            ✓ All routine childhood vaccinations are up to date
+        </div>
+    </div>
+
+    <!-- Last Medical Checkup -->
+    <div class="section">
+        <div class="section-title">LAST MEDICAL CHECKUP DETAILS</div>
+        
+        <div style="margin-bottom: 15px;">
+            <strong>Date of Examination:</strong> {{ medical_data.last_medical_details.date }}<br>
+            <strong>Attending Physician:</strong> {{ medical_data.last_medical_details.doctor }}
+        </div>
+
+        <div class="vital-stats">
+            <div class="vital-item">
+                <div>Height</div>
+                <div class="vital-value">{{ medical_data.last_medical_details.height }}</div>
+            </div>
+            <div class="vital-item">
+                <div>Weight</div>
+                <div class="vital-value">{{ medical_data.last_medical_details.weight }}</div>
+            </div>
+            <div class="vital-item">
+                <div>Blood Pressure</div>
+                <div class="vital-value">{{ medical_data.last_medical_details.blood_pressure }}</div>
+            </div>
+            <div class="vital-item">
+                <div>Heart Rate</div>
+                <div class="vital-value">{{ medical_data.last_medical_details.heart_rate }}</div>
+            </div>
+        </div>
+
+        <table>
+            <tr>
+                <th width="20%">Clinical Findings</th>
+                <td>{{ medical_data.last_medical_details.findings }}</td>
+            </tr>
+            <tr>
+                <th>Recommendations</th>
+                <td>{{ medical_data.last_medical_details.recommendations }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Medical History -->
+    <div class="section">
+        <div class="section-title">MEDICAL HISTORY</div>
+        <table>
+            <thead>
+                <tr>
+                    <th width="20%">Date</th>
+                    <th width="25%">Condition</th>
+                    <th>Treatment</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in medical_data.medical_history %}
+                <tr>
+                    <td>{{ record.date }}</td>
+                    <td>{{ record.condition }}</td>
+                    <td>{{ record.treatment }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p><strong>This medical record was generated by HealthCoach Medical System</strong></p>
+        <p>Generated on: {{ current_date }} | Document ID: HC{{ '%Y%m%d'|date }}</p>
+        <p style="color: #dc3545; font-weight: bold;">CONFIDENTIAL MEDICAL DOCUMENT - FOR AUTHORIZED HEALTHCARE USE ONLY</p>
+        <p>Unauthorized disclosure prohibited by privacy laws</p>
+    </div>
+</body>
+</html>

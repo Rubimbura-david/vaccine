@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Notifications{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="fas fa-bell me-2"></i>
+            My Notifications
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <a href="?filter=all" class="btn btn-sm {% if filter_type == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    All ({{ total_count }})
+                </a>
+                <a href="?filter=unread" class="btn btn-sm {% if filter_type == 'unread' %}btn-success{% else %}btn-outline-success{% endif %}">
+                    Unread ({{ unread_count }})
+                </a>
+            </div>
+            {% if notifications %}
+            <button class="btn btn-sm btn-danger" onclick="deleteAllNotifications()">
+                <i class="fas fa-trash me-1"></i> Delete All
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="list-group list-group-flush" id="notifications-list">
+                {% for notification in notifications %}
+                <div class="list-group-item {% if not notification.is_read %}list-group-item-warning{% endif %}" id="notification-{{ notification.id }}" data-read="{% if notification.is_read %}read{% else %}unread{% endif %}">
+                    <div class="d-flex w-100 justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h5 class="mb-1">
+                                    {% if not notification.is_read %}
+                                        <span class="badge bg-warning me-2">New</span>
+                                    {% endif %}
+                                    {{ notification.title }}
+                                </h5>
+                                <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+                            </div>
+                            
+                            <p class="mb-2">{{ notification.message }}</p>
+                            
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                <span class="badge 
+                                    {% if notification.notification_type == 'info' %}bg-info
+                                    {% elif notification.notification_type == 'success' %}bg-success
+                                    {% elif notification.notification_type == 'warning' %}bg-warning
+                                    {% elif notification.notification_type == 'danger' %}bg-danger
+                                    {% endif %}">
+                                    {{ notification.get_notification_type_display }}
+                                </span>
+                                
+                                {% if notification.is_for_all %}
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-users me-1"></i> All Patients
+                                    </span>
+                                {% elif notification.recipient %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-user me-1"></i> {{ notification.recipient.username }}
+                                    </span>
+                                {% endif %}
+                                
+                                {% if notification.schedule %}
+                                    <span class="badge bg-primary">
+                                        <i class="fas fa-calendar me-1"></i> Schedule
+                                    </span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="btn-group btn-group-sm mt-2">
+                                {% if not notification.is_read %}
+                                <button class="btn btn-outline-success" onclick="markAsRead({{ notification.id }})">
+                                    <i class="fas fa-check me-1"></i> Mark as Read
+                                </button>
+                                {% endif %}
+                                <button class="btn btn-outline-danger" onclick="deleteNotification({{ notification.id }})">
+                                    <i class="fas fa-trash me-1"></i> Delete
+                                </button>
+                                <button class="btn btn-outline-info" onclick="viewDetails('{{ notification.title|escapejs }}', '{{ notification.message|escapejs }}', '{{ notification.created_at|date:"F j, Y g:i A" }}', '{{ notification.get_notification_type_display|escapejs }}')">
+                                    <i class="fas fa-eye me-1"></i> View
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-5">
+                    <i class="fas fa-bell-slash fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Notifications</h4>
+                    <p class="text-muted">You don't have any notifications at the moment.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Details Modal -->
+<div class="modal fade" id="viewNotificationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Notification Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6 id="modalTitle" class="fw-bold"></h6>
+                <p id="modalMessage" class="mt-3"></p>
+                <div class="mt-3">
+                    <span id="modalType" class="badge"></span>
+                    <small class="text-muted ms-2" id="modalTime"></small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// CSRF token helper
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Mark single notification as read
+function markAsRead(notificationId) {
+    fetch(`/api/notifications/${notificationId}/read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the UI without reload
+            const element = document.getElementById(`notification-${notificationId}`);
+            if (element) {
+                element.classList.remove('list-group-item-warning');
+                
+                // Remove the New badge
+                const badge = element.querySelector('.badge.bg-warning');
+                if (badge) badge.remove();
+                
+                // Remove the Mark as Read button
+                const markBtn = element.querySelector('.btn-outline-success');
+                if (markBtn) markBtn.remove();
+            }
+        }
+    });
+}
+
+// Delete single notification
+function deleteNotification(notificationId) {
+    if (!confirm('Delete this notification?')) return;
+    
+    fetch(`/api/notifications/${notificationId}/delete/`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Remove from DOM
+            const element = document.getElementById(`notification-${notificationId}`);
+            if (element) {
+                element.remove();
+            }
+            
+            // Check if there are any notifications left
+            const remaining = document.querySelectorAll('[id^="notification-"]').length;
+            if (remaining === 0) {
+                location.reload(); // Reload to show empty state
+            }
+        }
+    });
+}
+
+// Delete all notifications
+function deleteAllNotifications() {
+    if (!confirm('Delete ALL notifications? This cannot be undone.')) return;
+    
+    fetch('/api/notifications/delete-all/', {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+// View details modal
+function viewDetails(title, message, time, type) {
+    document.getElementById('modalTitle').innerHTML = title;
+    document.getElementById('modalMessage').innerHTML = message;
+    document.getElementById('modalTime').innerHTML = `Received: ${time}`;
+    
+    const typeSpan = document.getElementById('modalType');
+    typeSpan.innerHTML = type;
+    typeSpan.className = 'badge';
+    
+    if (type.includes('Info')) typeSpan.classList.add('bg-info');
+    else if (type.includes('Success')) typeSpan.classList.add('bg-success');
+    else if (type.includes('Warning')) typeSpan.classList.add('bg-warning');
+    else if (type.includes('Danger')) typeSpan.classList.add('bg-danger');
+    else typeSpan.classList.add('bg-secondary');
+    
+    const modal = new bootstrap.Modal(document.getElementById('viewNotificationModal'));
+    modal.show();
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded, notifications ready');
+});
+</script>
+{% endblock %}

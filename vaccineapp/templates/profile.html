@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Profile Information</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-user-circle fa-5x text-primary"></i>
+                    </div>
+                    <h4>{{ user.get_full_name|default:user.username }}</h4>
+                    <p class="text-muted">@{{ user.username }}</p>
+                    <hr>
+                    <div class="text-start">
+                        <p><strong><i class="fas fa-envelope me-2"></i>Email:</strong> {{ user.email|default:"Not provided" }}</p>
+                        <p><strong><i class="fas fa-calendar me-2"></i>Joined:</strong> {{ user.date_joined|date:"F d, Y" }}</p>
+                        <p><strong><i class="fas fa-clock me-2"></i>Last Login:</strong> {{ user.last_login|date:"F d, Y H:i"|default:"Never" }}</p>
+                        {% if user.is_staff %}
+                        <p><strong><i class="fas fa-shield-alt me-2"></i>Role:</strong> Administrator</p>
+                        {% elif user.userprofile.user_type %}
+                        <p><strong><i class="fas fa-user-md me-2"></i>Role:</strong> {{ user.userprofile.get_user_type_display }}</p>
+                        {% else %}
+                        <p><strong><i class="fas fa-user me-2"></i>Role:</strong> User</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Account Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="text-muted">Username</label>
+                            <p class="fw-bold">{{ user.username }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted">Full Name</label>
+                            <p class="fw-bold">{{ user.get_full_name|default:"Not provided" }}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="text-muted">Email Address</label>
+                            <p class="fw-bold">{{ user.email|default:"Not provided" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted">User ID</label>
+                            <p class="fw-bold">{{ user.id }}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="text-muted">Account Status</label>
+                            <p><span class="badge bg-success">Active</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted">Staff Status</label>
+                            <p>{% if user.is_staff %}Yes{% else %}No{% endif %}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-warning">
+            <h4 class="mb-0">Edit Vaccination Record</h4>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Patient *</label>
+                        <select name="patient_id" class="form-control" required>
+                            <option value="">Select Patient</option>
+                            {% for patient in patients %}
+                                <option value="{{ patient.id }}" {% if record.patient.id == patient.id %}selected{% endif %}>
+                                    {{ patient }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Vaccine *</label>
+                        <select name="vaccine_id" class="form-control" required>
+                            <option value="">Select Vaccine</option>
+                            {% for vaccine in vaccines %}
+                                <option value="{{ vaccine.id }}" {% if record.vaccine.id == vaccine.id %}selected{% endif %}>
+                                    {{ vaccine.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Dose Number *</label>
+                        <input type="number" name="dose_number" class="form-control" value="{{ record.dose_number }}" required>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Total Doses *</label>
+                        <input type="number" name="total_doses" class="form-control" value="{{ record.total_doses }}" required>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Date Administered</label>
+                        <input type="date" name="date_administered" class="form-control" value="{{ record.date_administered|date:'Y-m-d' }}">
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Next Due Date</label>
+                        <input type="date" name="next_due_date" class="form-control" value="{{ record.next_due_date|date:'Y-m-d' }}">
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Administered By</label>
+                        <input type="text" name="administered_by" class="form-control" value="{{ record.administered_by|default:'' }}">
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Administering Facility</label>
+                        <input type="text" name="administering_facility" class="form-control" value="{{ record.administering_facility|default:'' }}">
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-control">
+                            <option value="administered" {% if record.status == 'administered' %}selected{% endif %}>Administered</option>
+                            <option value="scheduled" {% if record.status == 'scheduled' %}selected{% endif %}>Scheduled</option>
+                            <option value="missed" {% if record.status == 'missed' %}selected{% endif %}>Missed</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Reaction</label>
+                        <select name="reaction" class="form-control">
+                            <option value="none" {% if record.reaction == 'none' %}selected{% endif %}>None</option>
+                            <option value="mild" {% if record.reaction == 'mild' %}selected{% endif %}>Mild</option>
+                            <option value="moderate" {% if record.reaction == 'moderate' %}selected{% endif %}>Moderate</option>
+                            <option value="severe" {% if record.reaction == 'severe' %}selected{% endif %}>Severe</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Reaction Notes</label>
+                        <input type="text" name="reaction_notes" class="form-control" value="{{ record.reaction_notes|default:'' }}">
+                    </div>
+                    
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Additional Notes</label>
+                        <textarea name="notes" class="form-control" rows="3">{{ record.notes|default:'' }}</textarea>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'view_vaccination_record' record.id %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

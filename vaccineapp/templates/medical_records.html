@@ -1,0 +1,318 @@
+{% load static %}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-file-medical me-2"></i>
+        Complete Medical Records
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'download_medical_record' %}" class="btn btn-primary">
+            <i class="fas fa-download me-1"></i> Download Full Record
+        </a>
+    </div>
+</div>
+
+<style>
+    .medical-record-section {
+        margin-bottom: 2rem;
+    }
+    .record-card {
+        border-left: 4px solid #007bff;
+        transition: all 0.3s ease;
+    }
+    .record-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .growth-chart {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+    }
+    .vaccine-badge {
+        font-size: 0.7rem;
+    }
+    .milestone-item {
+        border-left: 3px solid #28a745;
+        padding-left: 15px;
+        margin-bottom: 10px;
+    }
+</style>
+
+<!-- Personal Information -->
+<div class="medical-record-section">
+    <div class="card record-card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-id-card me-2"></i>
+                Personal Identification
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="40%">Full Name:</th>
+                            <td>{{ medical_data.personal_info.full_name|default:"Not specified" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Date of Birth:</th>
+                            <td>{{ medical_data.personal_info.date_of_birth|default:"Not specified" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Age:</th>
+                            <td>{{ medical_data.personal_info.age|default:"Not specified" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Gender:</th>
+                            <td>{{ medical_data.personal_info.gender|default:"Not specified" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Blood Type:</th>
+                            <td><span class="badge bg-danger">{{ medical_data.personal_info.blood_type|default:"Not specified" }}</span></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="40%">Allergies:</th>
+                            <td><span class="badge bg-warning">{{ medical_data.personal_info.allergies|default:"None recorded" }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>Emergency Contact:</th>
+                            <td>{{ medical_data.personal_info.emergency_contact|default:"Not specified" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Primary Physician:</th>
+                            <td>{{ medical_data.personal_info.primary_physician|default:"Not specified" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Insurance No:</th>
+                            <td><small class="text-muted">{{ medical_data.personal_info.insurance_number|default:"Not specified" }}</small></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Growth History & Last Medical Details -->
+<div class="row medical-record-section">
+    <!-- Growth History -->
+    <div class="col-lg-8">
+        <div class="card record-card h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Growth History & Development
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Age</th>
+                                <th>Height</th>
+                                <th>Weight</th>
+                                <th>Percentile</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in medical_data.growth_history %}
+                            <tr>
+                                <td>{{ record.date|default:"-" }}</td>
+                                <td>{{ record.age|default:"-" }}</td>
+                                <td><strong>{{ record.height|default:"-" }}</strong></td>
+                                <td><strong>{{ record.weight|default:"-" }}</strong></td>
+                                <td><span class="badge bg-info">{{ record.percentile|default:"-" }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">No growth history records available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Last Medical Details -->
+    <div class="col-lg-4">
+        <div class="card record-card h-100">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-stethoscope me-2"></i>
+                    Last Medical Checkup
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if medical_data.last_medical_details %}
+                <div class="mb-3">
+                    <strong>Date:</strong> {{ medical_data.last_medical_details.date|default:"Not available" }}<br>
+                    <strong>Doctor:</strong> {{ medical_data.last_medical_details.doctor|default:"Not available" }}<br>
+                    <strong>Purpose:</strong> {{ medical_data.last_medical_details.purpose|default:"Not available" }}
+                </div>
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <div class="border rounded p-2 bg-light">
+                            <small>Height</small><br>
+                            <strong class="text-primary">{{ medical_data.last_medical_details.height|default:"-" }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2 bg-light">
+                            <small>Weight</small><br>
+                            <strong class="text-success">{{ medical_data.last_medical_details.weight|default:"-" }}</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="small">
+                    <strong>Vital Signs:</strong><br>
+                    BP: {{ medical_data.last_medical_details.blood_pressure|default:"-" }} | 
+                    HR: {{ medical_data.last_medical_details.heart_rate|default:"-" }} | 
+                    Temp: {{ medical_data.last_medical_details.temperature|default:"-" }}<br><br>
+                    <strong>Findings:</strong><br>
+                    {{ medical_data.last_medical_details.findings|default:"No findings recorded" }}<br><br>
+                    <strong>Next Checkup:</strong><br>
+                    {{ medical_data.last_medical_details.next_checkup|default:"Not scheduled" }}
+                </div>
+                {% else %}
+                <p class="text-muted text-center">No recent checkup records available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vaccination Records -->
+<div class="medical-record-section">
+    <div class="card record-card">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-syringe me-2"></i>
+                Complete Vaccination Records
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Vaccine</th>
+                            <th>Date Administered</th>
+                            <th>Dose</th>
+                            <th>Location</th>
+                            <th>Batch Number</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vaccine in medical_data.vaccination_records %}
+                        <tr>
+                            <td><strong>{{ vaccine.vaccine|default:"-" }}</strong></td>
+                            <td>{{ vaccine.date|default:"-" }}</td>
+                            <td><span class="badge bg-primary">{{ vaccine.dose|default:"-" }}</span></td>
+                            <td><small>{{ vaccine.location|default:"-" }}</small></td>
+                            <td><code>{{ vaccine.batch|default:"-" }}</code></td>
+                            <td><span class="badge bg-success">Completed</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No vaccination records available</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Medical Information -->
+<div class="row medical-record-section">
+    <!-- Medical History -->
+    <div class="col-md-6">
+        <div class="card record-card h-100">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-history me-2"></i>
+                    Medical History
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for record in medical_data.medical_history %}
+                <div class="border-start border-3 border-info ps-3 mb-3">
+                    <strong>{{ record.date|default:"-" }}</strong><br>
+                    <span class="text-primary">{{ record.condition|default:"-" }}</span><br>
+                    <small class="text-muted">Treatment: {{ record.treatment|default:"-" }}</small><br>
+                    <small>Doctor: {{ record.doctor|default:"-" }}</small>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center">No medical history records available</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Family History & Developmental Milestones -->
+    <div class="col-md-6">
+        <div class="card record-card h-100">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users me-2"></i>
+                    Family History & Development
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>Family Medical History</h6>
+                {% if medical_data.family_history %}
+                <ul class="small">
+                    <li><strong>Father:</strong> {{ medical_data.family_history.father|default:"No information" }}</li>
+                    <li><strong>Mother:</strong> {{ medical_data.family_history.mother|default:"No information" }}</li>
+                    <li><strong>Siblings:</strong> {{ medical_data.family_history.siblings|default:"No information" }}</li>
+                    <li><strong>Grandparents:</strong> {{ medical_data.family_history.grandparents|default:"No information" }}</li>
+                </ul>
+                {% else %}
+                <p class="text-muted">No family history recorded</p>
+                {% endif %}
+                
+                <h6 class="mt-3">Developmental Milestones</h6>
+                {% for milestone in medical_data.developmental_milestones %}
+                <div class="milestone-item">
+                    <strong>{{ milestone.age|default:"-" }}:</strong> {{ milestone.milestone|default:"-" }}
+                </div>
+                {% empty %}
+                <p class="text-muted">No developmental milestones recorded</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Download Section -->
+<div class="medical-record-section">
+    <div class="card border-primary">
+        <div class="card-body text-center">
+            <h5 class="card-title text-primary">
+                <i class="fas fa-file-pdf me-2"></i>
+                Download Complete Medical Record
+            </h5>
+            <p class="text-muted">
+                Download a comprehensive PDF version of all medical records for sharing with healthcare providers or personal records.
+            </p>
+            <a href="{% url 'download_medical_record' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-download me-2"></i> Download Full Medical Record
+            </a>
+            <p class="small text-muted mt-2">
+                Last updated: {{ current_date|default:"" }}
+            </p>
+        </div>
+    </div>
+</div>

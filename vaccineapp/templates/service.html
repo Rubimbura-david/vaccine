@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}service - HealthCoach{% endblock %}
+{% block title %}Services - VMS{% endblock %}
 
 {% block extra_css %}
 <!-- Contact page specific CSS -->
@@ -15,7 +15,7 @@
             <div class="row">
                 <div class="col-md-8 mx-auto text-center">
                     <h1>Comprehensive Vaccination Services</h1>
-                    <p class="lead">Complete immunization care from infancy through childhood - protecting your family's health</p>
+                    <p class="lead">Complete immunization care for all ages - protecting your health and community</p>
                 </div>
             </div>
         </div>
@@ -27,7 +27,7 @@
             <div class="row">
                 <div class="col-12 text-center mb-5">
                     <h2 class="section-title">Our Vaccination Services</h2>
-                    <p class="section-subtitle">Complete immunization solutions for your family's protection</p>
+                    <p class="section-subtitle">Complete immunization solutions for your health protection</p>
                 </div>
             </div>
             <div class="row">
@@ -36,12 +36,12 @@
                         <div class="service-icon-wrapper">
                             <i class="fas fa-baby"></i>
                         </div>
-                        <h3>Infant Immunization</h3>
-                        <p>Complete vaccination schedule from birth through first year with growth monitoring and development checks</p>
+                        <h3>Infant & Child Immunization</h3>
+                        <p>Complete vaccination schedule from birth through childhood with growth monitoring and development checks</p>
                         <div class="service-features">
                             <span class="feature-badge">Newborn Vaccines</span>
                             <span class="feature-badge">Growth Tracking</span>
-                            <span class="feature-badge">2-12 Month Schedule</span>
+                            <span class="feature-badge">Complete Schedule</span>
                         </div>
                     </div>
                 </div>
@@ -50,12 +50,12 @@
                         <div class="service-icon-wrapper">
                             <i class="fas fa-syringe"></i>
                         </div>
-                        <h3>Childhood Vaccines</h3>
-                        <p>Age-appropriate immunizations for toddlers and school-age children with booster doses</p>
+                        <h3>Adult & Adolescent Vaccines</h3>
+                        <p>Age-appropriate immunizations for adolescents, adults, and seniors with booster doses</p>
                         <div class="service-features">
-                            <span class="feature-badge">MMR & Varicella</span>
-                            <span class="feature-badge">Booster Doses</span>
-                            <span class="feature-badge">School Requirements</span>
+                            <span class="feature-badge">HPV & Tdap</span>
+                            <span class="feature-badge">Flu & Pneumococcal</span>
+                            <span class="feature-badge">Shingles & COVID-19</span>
                         </div>
                     </div>
                 </div>
@@ -77,15 +77,15 @@
         </div>
     </section>
 
-    <!-- Child Healthcare Program -->
+    <!-- Immunization Program -->
     <section class="childcare-section py-5 bg-light">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-6">
-                    <h2 class="section-title">Child Immunization Program (0-12 Years)</h2>
+                    <h2 class="section-title">Comprehensive Immunization Program (All Ages)</h2>
                     <p class="service-description">
-                        Our comprehensive child immunization program ensures your child receives complete protection 
-                        from birth through age 12, following CDC-recommended schedules with expert medical supervision.
+                        Our comprehensive immunization program ensures you receive complete protection 
+                        following CDC-recommended schedules with expert medical supervision.
                     </p>
                     
                     <div class="program-features">
@@ -93,7 +93,7 @@
                             <i class="fas fa-syringe feature-icon"></i>
                             <div class="feature-content">
                                 <h5>Complete Vaccination Schedule</h5>
-                                <p>All CDC-recommended vaccines from birth to age 12 with proper timing and booster doses</p>
+                                <p>All recommended vaccines with proper timing and booster doses for all age groups</p>
                             </div>
                         </div>
                         
@@ -137,6 +137,10 @@
                                 <span class="timeline-age">11-12 Years</span>
                                 <span class="timeline-vaccines">HPV, Tdap, Meningococcal</span>
                             </div>
+                            <div class="timeline-item">
+                                <span class="timeline-age">Adult</span>
+                                <span class="timeline-vaccines">Flu, Td/Tdap, Pneumococcal, Shingles</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -144,21 +148,21 @@
                 <div class="col-lg-6">
                     <div class="childcare-visual">
                         <img src="{% static 'img/child-vaccination.jpg' %}" 
-                             alt="Child Vaccination" class="img-fluid rounded shadow">
+                             alt="Vaccination Services" class="img-fluid rounded shadow">
                         <div class="age-groups mt-4">
                             <h5>Age-Specific Vaccination Plans:</h5>
                             <div class="age-group-cards">
                                 <div class="age-card">
-                                    <h6>0-2 Years</h6>
-                                    <p>Primary immunization series & infant vaccines</p>
+                                    <h6>0-12 Years</h6>
+                                    <p>Childhood immunization series & school requirements</p>
                                 </div>
                                 <div class="age-card">
-                                    <h6>3-5 Years</h6>
-                                    <p>Preschool boosters & kindergarten requirements</p>
+                                    <h6>13-64 Years</h6>
+                                    <p>Adolescent boosters & adult vaccines</p>
                                 </div>
                                 <div class="age-card">
-                                    <h6>6-12 Years</h6>
-                                    <p>School-age vaccines & pre-teen immunizations</p>
+                                    <h6>65+ Years</h6>
+                                    <p>Senior immunizations & seasonal protection</p>
                                 </div>
                             </div>
                         </div>
@@ -190,22 +194,25 @@
                             
                             <div class="mb-3">
                                 <label for="patientAge" class="form-label">Patient Age *</label>
-                                <input type="number" class="form-control" id="patientAge" placeholder="Age in months/years" min="0" max="18" required>
+                                <input type="number" class="form-control" id="patientAge" placeholder="Age in years" min="0" required>
                             </div>
                             
                             <div class="mb-3">
                                 <label for="vaccineType" class="form-label">Vaccine Received *</label>
                                 <select class="form-select" id="vaccineType" required>
                                     <option value="">Select vaccine</option>
-                                    <option value="dtap">DTaP</option>
+                                    <option value="dtap">DTaP/Tdap</option>
                                     <option value="mmr">MMR</option>
                                     <option value="hepb">Hepatitis B</option>
                                     <option value="polio">Polio</option>
                                     <option value="hib">Hib</option>
-                                    <option value="pcv">PCV</option>
+                                    <option value="pcv">PCV/Pneumococcal</option>
                                     <option value="varicella">Varicella</option>
                                     <option value="hepa">Hepatitis A</option>
-                                    <option value="influenza">Influenza</option>
+                                    <option value="influenza">Influenza (Flu)</option>
+                                    <option value="hpv">HPV</option>
+                                    <option value="covid">COVID-19</option>
+                                    <option value="shingles">Shingles</option>
                                     <option value="other">Other</option>
                                 </select>
                             </div>
@@ -230,12 +237,12 @@
                                         <label class="form-check-label" for="rash">Rash</label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="fussiness" value="fussiness">
-                                        <label class="form-check-label" for="fussiness">Fussiness/irritability</label>
+                                        <input class="form-check-input" type="checkbox" id="fatigue" value="fatigue">
+                                        <label class="form-check-label" for="fatigue">Fatigue/weakness</label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="lethargy" value="lethargy">
-                                        <label class="form-check-label" for="lethargy">Lethargy</label>
+                                        <input class="form-check-input" type="checkbox" id="headache" value="headache">
+                                        <label class="form-check-label" for="headache">Headache</label>
                                     </div>
                                 </div>
                             </div>
@@ -286,7 +293,7 @@
                                 </div>
                                 <div class="guidance-content">
                                     <h5>Normal Reactions</h5>
-                                    <p>Common and expected: Mild fever, soreness at injection site, fussiness. Use cool compress and children's pain reliever as directed</p>
+                                    <p>Common and expected: Mild fever, soreness at injection site, fatigue. Use cool compress and pain reliever as directed</p>
                                 </div>
                             </div>
                             
@@ -373,7 +380,7 @@
                                 <select class="form-select" id="preferredDoctor">
                                     <option value="">Any Available Specialist</option>
                                     <option value="dr_johnson">Dr. Sarah Johnson - Pediatric Vaccination</option>
-                                    <option value="dr_chen">Dr. Mike Chen - Travel Vaccination</option>
+                                    <option value="dr_chen">Dr. Mike Chen - Travel & Adult Vaccination</option>
                                     <option value="dr_rodriguez">Dr. Emily Rodriguez - High-Risk Cases</option>
                                     <option value="dr_thompson">Dr. Lisa Thompson - Immunization Schedule</option>
                                 </select>
@@ -408,7 +415,7 @@
                                 <select class="form-select" id="urgencyLevel">
                                     <option value="routine">Routine (Within 3 days)</option>
                                     <option value="soon">Soon (Within 24 hours)</option>
-                                    <option value="urgent">Urgent (Same day - for travel or school requirements)</option>
+                                    <option value="urgent">Urgent (Same day - for travel or school/work requirements)</option>
                                 </select>
                             </div>
                             
@@ -439,8 +446,8 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-8 mx-auto text-center">
-                    <h2 class="cta-title">Start Your Child's Immunization Journey Today</h2>
-                    <p class="cta-text">Join thousands of families who trust HealthCoach for complete vaccination protection from birth through childhood</p>
+                    <h2 class="cta-title">Start Your Immunization Journey Today</h2>
+                    <p class="cta-text">Join thousands of individuals who trust VMS for complete vaccination protection at all stages of life</p>
                     <div class="cta-buttons">
                         <a href="{% url 'contact' %}" class="btn btn-light btn-lg me-3">Schedule Vaccination</a>
                         <a href="tel:+1235235588" class="btn btn-outline-light btn-lg">
@@ -457,8 +464,8 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-4 col-md-6 mb-4 mb-md-0">
-                    <h5>HealthCoach</h5>
-                    <p>Your trusted partner in child vaccination and family immunization services. We provide safe, professional vaccination care with expert medical supervision.</p>
+                    <h5>VMS</h5>
+                    <p>Your trusted partner in vaccination and immunization services. We provide safe, professional vaccination care with expert medical supervision.</p>
                     <div class="social-links mt-4">
                         <a href="#"><i class="fab fa-facebook-f"></i></a>
                         <a href="#"><i class="fab fa-twitter"></i></a>
@@ -470,8 +477,8 @@
                 <div class="col-lg-2 col-md-6 mb-4 mb-md-0">
                     <h5>Vaccine Services</h5>
                     <ul>
-                        <li><a href="{% url 'service' %}">Infant Immunization</a></li>
-                        <li><a href="{% url 'service' %}">Childhood Vaccines</a></li>
+                        <li><a href="{% url 'service' %}">Infant & Child Immunization</a></li>
+                        <li><a href="{% url 'service' %}">Adult & Adolescent Vaccines</a></li>
                         <li><a href="{% url 'service' %}">Travel Vaccination</a></li>
                         <li><a href="{% url 'vaccine' %}">Vaccine Information</a></li>
                     </ul>
@@ -509,7 +516,7 @@
             </div>
             
             <div class="copyright">
-                <p>Copyright ©2025 All rights reserved | HealthCoach Vaccination Services</p>
+                <p>Copyright ©2025 All rights reserved | VMS - Vaccine Management System</p>
             </div>
         </div>
     </footer>

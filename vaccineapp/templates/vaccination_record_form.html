@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Add Vaccination Record{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="fas fa-syringe me-2"></i>
+                    Add New Vaccination Record
+                </h1>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-plus-circle me-2"></i>
+                        Vaccination Record Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'create_vaccination_record' %}" id="vaccinationRecordForm">
+                        {% csrf_token %}
+                        
+                        <!-- Patient Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">Patient <span class="text-danger">*</span></label>
+                            <select class="form-select" name="patient_id" required>
+                                <option value="">Select Patient</option>
+                                {% for patient in patients %}
+                                <option value="{{ patient.id }}">{{ patient.full_name }} (ID: {{ patient.id }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Vaccine Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">Vaccine <span class="text-danger">*</span></label>
+                            <select class="form-select" name="vaccine_id" required>
+                                <option value="">Select Vaccine</option>
+                                {% for vaccine in vaccines %}
+                                <option value="{{ vaccine.id }}">{{ vaccine.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Dose Information -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Dose Number <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="dose_number" min="1" value="" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Total Doses Required</label>
+                                <input type="number" class="form-control" name="total_doses" min="1" value="">
+                            </div>
+                        </div>
+                        
+                        <!-- Date Administered -->
+                        <div class="mb-3">
+                            <label class="form-label">Date Administered <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="date_administered" required>
+                        </div>
+                        
+                        <!-- Next Due Date -->
+                        <div class="mb-3">
+                            <label class="form-label">Next Due Date</label>
+                            <input type="date" class="form-control" name="next_due_date">
+                            <small class="text-muted">Leave blank if this is the final dose</small>
+                        </div>
+                        
+                        <!-- Administration Details -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Administered By</label>
+                                <input type="text" class="form-control" name="administered_by" placeholder="Dr. Name / Nurse Name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Facility</label>
+                                <input type="text" class="form-control" name="administering_facility" placeholder="Hospital/Clinic Name">
+                            </div>
+                        </div>
+                        
+                        <!-- Status -->
+                        <div class="mb-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" name="status">
+                                <option value="administered" selected>Administered</option>
+                                <option value="scheduled">Scheduled</option>
+                                <option value="missed">Missed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Reaction -->
+                        <div class="mb-3">
+                            <label class="form-label">Reaction</label>
+                            <select class="form-select" name="reaction">
+                                <option value="none" selected>No Reaction</option>
+                                <option value="mild">Mild Reaction</option>
+                                <option value="moderate">Moderate Reaction</option>
+                                <option value="severe">Severe Reaction</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Reaction Notes -->
+                        <div class="mb-3">
+                            <label class="form-label">Reaction Notes</label>
+                            <textarea class="form-control" name="reaction_notes" rows="2" placeholder="Describe any reaction..."></textarea>
+                        </div>
+                        
+                        <!-- Additional Notes -->
+                        <div class="mb-3">
+                            <label class="form-label">Additional Notes</label>
+                            <textarea class="form-control" name="notes" rows="2" placeholder="Any additional information..."></textarea>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{% url 'dashboard' %}#records" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Save Vaccination Record
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

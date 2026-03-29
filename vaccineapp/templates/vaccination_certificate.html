@@ -1,0 +1,197 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Vaccination Certificate - {{ patient.full_name }}</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            margin: 40px;
+            background: #fff;
+        }
+        .certificate {
+            border: 15px solid #2c5aa0;
+            padding: 30px;
+            position: relative;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #2c5aa0;
+            font-size: 36px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .header h2 {
+            color: #666;
+            font-size: 24px;
+            margin-top: 0;
+            font-weight: normal;
+        }
+        .seal {
+            position: absolute;
+            top: 50px;
+            right: 50px;
+            width: 100px;
+            height: 100px;
+            border: 3px solid #2c5aa0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: rotate(-15deg);
+        }
+        .seal span {
+            color: #2c5aa0;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.4;
+        }
+        .content {
+            margin: 40px 0;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .info-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        .info-table td:first-child {
+            font-weight: bold;
+            width: 200px;
+            background: #f8f9fa;
+        }
+        .vaccine-details {
+            background: #f0f7ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .footer {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature {
+            text-align: center;
+            width: 200px;
+        }
+        .signature-line {
+            border-top: 1px solid #000;
+            margin-top: 40px;
+            padding-top: 10px;
+        }
+        .qr-code {
+            width: 100px;
+            height: 100px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        @media print {
+            body { margin: 0; }
+            .certificate { border: 10px solid #2c5aa0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate">
+        <div class="seal">
+            <span>OFFICIAL<br>SEAL<br>HEALTHCOACH</span>
+        </div>
+        
+        <div class="header">
+            <h1>HealthCoach Medical System</h1>
+            <h2>VACCINATION CERTIFICATE</h2>
+            <p>Certificate of Immunization</p>
+        </div>
+        
+        <div class="content">
+            <p style="text-align: center; font-size: 18px;">This is to certify that</p>
+            <h2 style="text-align: center; color: #2c5aa0; font-size: 32px;">{{ patient.full_name }}</h2>
+            <p style="text-align: center; font-size: 16px;">has received the following vaccination:</p>
+            
+            <div class="vaccine-details">
+                <table class="info-table">
+                    <tr>
+                        <td>Vaccine</td>
+                        <td><strong>{{ record.vaccine.name }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Date Administered</td>
+                        <td>{{ record.date_administered|date:"F d, Y" }}</td>
+                    </tr>
+                    <tr>
+                        <td>Dose Number</td>
+                        <td>Dose {{ record.dose_number }} of {{ record.total_doses }}</td>
+                    </tr>
+                    <tr>
+                        <td>Manufacturer</td>
+                        <td>{{ record.vaccine.manufacturer|default:"Not Specified" }}</td>
+                    </tr>
+                    <tr>
+                        <td>Batch/Lot Number</td>
+                        <td>{{ record.lot_number|default:"N/A" }}</td>
+                    </tr>
+                    <tr>
+                        <td>Administered By</td>
+                        <td>{{ record.administered_by|default:"HealthCoach Medical" }}</td>
+                    </tr>
+                    <tr>
+                        <td>Facility</td>
+                        <td>{{ record.administering_facility|default:"HealthCoach Medical Center" }}</td>
+                    </tr>
+                    <tr>
+                        <td>Next Dose Due</td>
+                        <td>{{ record.next_due_date|date:"F d, Y"|default:"Not Required" }}</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <p style="text-align: center; font-style: italic; margin-top: 20px;">
+                "This certificate confirms that the individual named above has received the specified vaccination 
+                in accordance with standard medical practices."
+            </p>
+        </div>
+        
+        <div class="footer">
+            <div class="signature">
+                <div class="signature-line">
+                    Authorized Signature
+                </div>
+                <p>Medical Director<br>HealthCoach Medical System</p>
+            </div>
+            
+            <div class="signature">
+                <div class="qr-code">
+                    <i class="fas fa-qrcode" style="font-size: 60px; color: #666;"></i>
+                </div>
+                <p style="font-size: 10px;">Scan to verify</p>
+            </div>
+            
+            <div class="signature">
+                <div class="signature-line">
+                    Date
+                </div>
+                <p>{{ current_date }}</p>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #999;">
+            <p>Certificate ID: VAC-{{ record.id }}-{{ record.date_administered|date:"Ymd" }}</p>
+            <p>This is an official document of HealthCoach Medical System. Unauthorized use or reproduction is prohibited.</p>
+        </div>
+    </div>
+</body>
+</html>

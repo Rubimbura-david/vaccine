@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Contact Us - HealthCoach{% endblock %}
+{% block title %}Vaccine Information - VMS{% endblock %}
 
 {% block extra_css %}
 <!-- Contact page specific CSS -->
@@ -14,8 +14,8 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-8 mx-auto text-center">
-                    <h1>Child Vaccination Information Center</h1>
-                    <p class="lead">Complete guide to childhood immunizations and vaccination schedules</p>
+                    <h1>Vaccination Information Center</h1>
+                    <p class="lead">Complete guide to immunizations and vaccination schedules for all ages</p>
                 </div>
             </div>
         </div>
@@ -26,8 +26,8 @@
         <div class="container">
             <div class="row">
                 <div class="col-12 text-center mb-4">
-                    <h2 class="section-title">Find the Right Vaccine for Your Child</h2>
-                    <p class="section-subtitle">Search and filter vaccines by age and type</p>
+                    <h2 class="section-title">Find the Right Vaccine</h2>
+                    <p class="section-subtitle">Search and filter vaccines by age group and type</p>
                 </div>
             </div>
             <div class="row">
@@ -39,9 +39,11 @@
                                     <label for="vaccineType" class="form-label">Vaccine Type</label>
                                     <select class="form-select" id="vaccineType">
                                         <option value="all">All Vaccines</option>
-                                        <option value="routine">Routine Childhood</option>
-                                        <option value="infant">Infant Vaccines</option>
-                                        <option value="school">School-age Vaccines</option>
+                                        <option value="routine">Routine Vaccines</option>
+                                        <option value="infant">Infant Vaccines (0-1 year)</option>
+                                        <option value="child">Child Vaccines (1-12 years)</option>
+                                        <option value="adolescent">Adolescent Vaccines (13-17 years)</option>
+                                        <option value="adult">Adult Vaccines</option>
                                         <option value="travel">Travel Vaccines</option>
                                         <option value="seasonal">Seasonal Vaccines</option>
                                     </select>
@@ -49,14 +51,14 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="ageGroup" class="form-label">Child's Age</label>
+                                    <label for="ageGroup" class="form-label">Age Group</label>
                                     <select class="form-select" id="ageGroup">
                                         <option value="all">All Ages</option>
-                                        <option value="newborn">Newborn (0-2 months)</option>
-                                        <option value="infant">Infants (2-12 months)</option>
-                                        <option value="toddler">Toddlers (1-3 years)</option>
-                                        <option value="preschool">Preschool (3-5 years)</option>
-                                        <option value="schoolage">School Age (6-12 years)</option>
+                                        <option value="infant">Infant (0-1 year)</option>
+                                        <option value="child">Child (1-12 years)</option>
+                                        <option value="adolescent">Adolescent (13-17 years)</option>
+                                        <option value="adult">Adult (18-64 years)</option>
+                                        <option value="senior">Senior (65+ years)</option>
                                     </select>
                                 </div>
                             </div>
@@ -82,8 +84,8 @@
         <div class="container">
             <div class="row">
                 <div class="col-12 text-center mb-5">
-                    <h2 class="section-title">Childhood Vaccines</h2>
-                    <p class="section-subtitle">Complete immunization schedule from birth to adolescence</p>
+                    <h2 class="section-title">Vaccines by Age Group</h2>
+                    <p class="section-subtitle">Complete immunization schedule from infancy through adulthood</p>
                 </div>
             </div>
 
@@ -95,7 +97,7 @@
                 </h3>
                 <div class="row">
                     <div class="col-lg-6 mb-4">
-                        <div class="vaccine-card" data-age="newborn,infant" data-name="hepatitis b">
+                        <div class="vaccine-card" data-age="infant" data-name="hepatitis b">
                             <div class="vaccine-header">
                                 <h4>Hepatitis B Vaccine</h4>
                                 <span class="vaccine-badge infant">Infant</span>
@@ -178,15 +180,15 @@
                 </div>
             </div>
 
-            <!-- Toddler & Preschool Vaccines -->
-            <div class="vaccine-category mb-5" data-category="routine">
+            <!-- Child Vaccines -->
+            <div class="vaccine-category mb-5" data-category="child">
                 <h3 class="category-title">
                     <i class="fas fa-child me-2"></i>
-                    Toddler & Preschool Vaccines (1-5 Years)
+                    Child Vaccines (1-12 Years)
                 </h3>
                 <div class="row">
                     <div class="col-lg-6 mb-4">
-                        <div class="vaccine-card" data-age="toddler,preschool" data-name="mmr measles mumps rubella">
+                        <div class="vaccine-card" data-age="child" data-name="mmr measles mumps rubella">
                             <div class="vaccine-header">
                                 <h4>MMR Vaccine</h4>
                                 <span class="vaccine-badge routine">Routine</span>
@@ -227,7 +229,7 @@
                     </div>
 
                     <div class="col-lg-6 mb-4">
-                        <div class="vaccine-card" data-age="toddler,preschool" data-name="varicella chickenpox">
+                        <div class="vaccine-card" data-age="child" data-name="varicella chickenpox">
                             <div class="vaccine-header">
                                 <h4>Varicella Vaccine</h4>
                                 <span class="vaccine-badge routine">Routine</span>
@@ -269,41 +271,41 @@
                 </div>
             </div>
 
-            <!-- School-age Vaccines -->
-            <div class="vaccine-category" data-category="school">
+            <!-- Adolescent & Adult Vaccines -->
+            <div class="vaccine-category" data-category="adolescent">
                 <h3 class="category-title">
-                    <i class="fas fa-graduation-cap me-2"></i>
-                    School-age Vaccines (6-12 Years)
+                    <i class="fas fa-user-md me-2"></i>
+                    Adolescent & Adult Vaccines (13+ Years)
                 </h3>
                 <div class="row">
                     <div class="col-lg-6 mb-4">
-                        <div class="vaccine-card" data-age="schoolage" data-name="hpv human papillomavirus">
+                        <div class="vaccine-card" data-age="adolescent,adult" data-name="hpv human papillomavirus">
                             <div class="vaccine-header">
                                 <h4>HPV Vaccine</h4>
-                                <span class="vaccine-badge school">School-age</span>
+                                <span class="vaccine-badge school">Adolescent/Adult</span>
                             </div>
                             <div class="vaccine-content">
                                 <p class="vaccine-description">Protects against Human Papillomavirus and related cancers.</p>
                                 
                                 <div class="vaccine-details">
                                     <div class="detail-item">
-                                        <strong>Schedule:</strong> 11-12 years (2 doses)
+                                        <strong>Schedule:</strong> 11-12 years (2-3 doses)
                                     </div>
                                     <div class="detail-item">
                                         <strong>Type:</strong> Inactivated
                                     </div>
                                     <div class="detail-item">
-                                        <strong>Series:</strong> 2 doses 6-12 months apart
+                                        <strong>Series:</strong> 2-3 doses based on age
                                     </div>
                                 </div>
 
                                 <div class="eligibility-criteria">
                                     <h6>Recommended For:</h6>
                                     <ul>
-                                        <li>Boys and girls at 11-12 years</li>
+                                        <li>Individuals at 11-12 years</li>
                                         <li>Can start as early as 9 years</li>
-                                        <li>Catch-up to age 26</li>
-                                        <li>No severe yeast allergy</li>
+                                        <li>Catch-up through age 26</li>
+                                        <li>Adults up to age 45 may benefit</li>
                                     </ul>
                                 </div>
 
@@ -318,33 +320,33 @@
                     </div>
 
                     <div class="col-lg-6 mb-4">
-                        <div class="vaccine-card" data-age="schoolage" data-name="tdap tetanus diphtheria pertussis">
+                        <div class="vaccine-card" data-age="adolescent,adult" data-name="tdap tetanus diphtheria pertussis">
                             <div class="vaccine-header">
-                                <h4>Tdap Booster</h4>
-                                <span class="vaccine-badge school">School-age</span>
+                                <h4>Tdap/Td Booster</h4>
+                                <span class="vaccine-badge school">Adolescent/Adult</span>
                             </div>
                             <div class="vaccine-content">
                                 <p class="vaccine-description">Booster for Tetanus, Diphtheria, and Whooping Cough.</p>
                                 
                                 <div class="vaccine-details">
                                     <div class="detail-item">
-                                        <strong>Schedule:</strong> 11-12 years
+                                        <strong>Schedule:</strong> 11-12 years, then every 10 years
                                     </div>
                                     <div class="detail-item">
                                         <strong>Type:</strong> Inactivated
                                     </div>
                                     <div class="detail-item">
-                                        <strong>Next Booster:</strong> Td every 10 years
+                                        <strong>Booster:</strong> Td every 10 years
                                     </div>
                                 </div>
 
                                 <div class="eligibility-criteria">
                                     <h6>Recommended For:</h6>
                                     <ul>
-                                        <li>All children at 11-12 years</li>
-                                        <li>Especially before starting middle school</li>
+                                        <li>All individuals at 11-12 years</li>
                                         <li>Pregnant women with each pregnancy</li>
-                                        <li>Adults who never received Tdap</li>
+                                        <li>Adults every 10 years</li>
+                                        <li>Wound management as needed</li>
                                     </ul>
                                 </div>
 
@@ -367,8 +369,8 @@
         <div class="container">
             <div class="row">
                 <div class="col-12 text-center mb-5">
-                    <h2 class="section-title">Childhood Vaccination Schedule</h2>
-                    <p class="section-subtitle">CDC-recommended immunization timeline from birth to 18 years</p>
+                    <h2 class="section-title">Vaccination Schedule by Age</h2>
+                    <p class="section-subtitle">Recommended immunization timeline from infancy through adulthood</p>
                 </div>
             </div>
             <div class="row">
@@ -415,6 +417,15 @@
                                 <span class="vaccine-pill">Meningococcal</span>
                             </div>
                         </div>
+                        <div class="timeline-item">
+                            <div class="timeline-age">Adult</div>
+                            <div class="timeline-vaccines">
+                                <span class="vaccine-pill">Td/Tdap</span>
+                                <span class="vaccine-pill">Flu</span>
+                                <span class="vaccine-pill">Pneumococcal</span>
+                                <span class="vaccine-pill">Shingles</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -426,8 +437,8 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-8 mx-auto text-center">
-                    <h2 class="cta-title">Ready to Protect Your Child?</h2>
-                    <p class="cta-text">Schedule your child's vaccination appointment today and ensure their lifelong health protection.</p>
+                    <h2 class="cta-title">Ready to Protect Your Health?</h2>
+                    <p class="cta-text">Schedule your vaccination appointment today and ensure lifelong health protection.</p>
                     <div class="cta-buttons">
                         <a href="{% url 'contact' %}" class="btn btn-light btn-lg me-3">Schedule Vaccination</a>
                         <a href="{% url 'service' %}" class="btn btn-outline-light btn-lg">View All Services</a>
@@ -442,8 +453,8 @@
         <div class="container">
             <div class="row">
                 <div class="col-12 text-center mb-5">
-                    <h2 class="section-title">Child Vaccine FAQs</h2>
-                    <p class="section-subtitle">Common questions about childhood vaccinations</p>
+                    <h2 class="section-title">Vaccine FAQs</h2>
+                    <p class="section-subtitle">Common questions about vaccinations</p>
                 </div>
             </div>
             <div class="row">
@@ -452,48 +463,48 @@
                         <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
-                                    Are childhood vaccines safe?
+                                    Are vaccines safe?
                                 </button>
                             </h2>
                             <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#vaccineFAQ">
                                 <div class="accordion-body">
-                                    Yes, childhood vaccines are extensively tested and monitored for safety. They undergo rigorous clinical trials and continuous safety monitoring. The benefits of vaccination far outweigh the risks of vaccine-preventable diseases.
+                                    Yes, vaccines are extensively tested and monitored for safety. They undergo rigorous clinical trials and continuous safety monitoring. The benefits of vaccination far outweigh the risks of vaccine-preventable diseases.
                                 </div>
                             </div>
                         </div>
                         <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
-                                    What are common vaccine side effects in children?
+                                    What are common vaccine side effects?
                                 </button>
                             </h2>
                             <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#vaccineFAQ">
                                 <div class="accordion-body">
-                                    Common side effects include soreness or redness at injection site, mild fever, fussiness, and tiredness. These are normal signs that the immune system is responding and usually resolve within 1-2 days. Serious side effects are very rare.
+                                    Common side effects include soreness or redness at injection site, mild fever, fatigue, and tiredness. These are normal signs that the immune system is responding and usually resolve within 1-2 days. Serious side effects are very rare.
                                 </div>
                             </div>
                         </div>
                         <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
-                                    Can my child get multiple vaccines at one visit?
+                                    Can I get multiple vaccines at one visit?
                                 </button>
                             </h2>
                             <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#vaccineFAQ">
                                 <div class="accordion-body">
-                                    Yes, getting multiple vaccines during the same visit is safe and recommended. This approach reduces the number of clinic visits and ensures your child is protected against multiple diseases simultaneously. A child's immune system can handle many more antigens than those contained in vaccines.
+                                    Yes, getting multiple vaccines during the same visit is safe and recommended. This approach reduces the number of clinic visits and ensures you are protected against multiple diseases simultaneously. The immune system can handle many more antigens than those contained in vaccines.
                                 </div>
                             </div>
                         </div>
                         <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
-                                    What if my child misses a vaccine dose?
+                                    What if I miss a vaccine dose?
                                 </button>
                             </h2>
                             <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#vaccineFAQ">
                                 <div class="accordion-body">
-                                    If your child misses a vaccine dose, we can create a catch-up schedule. It's never too late to get back on track. Contact us to discuss a personalized catch-up plan that will ensure your child receives all necessary protection.
+                                    If you miss a vaccine dose, we can create a catch-up schedule. It's never too late to get back on track. Contact us to discuss a personalized catch-up plan that will ensure you receive all necessary protection.
                                 </div>
                             </div>
                         </div>
@@ -508,8 +519,8 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-4 col-md-6 mb-4 mb-md-0">
-                    <h5>HealthCoach</h5>
-                    <p>Your trusted partner in child vaccination and family immunization services. We provide safe, professional vaccination care with expert medical supervision.</p>
+                    <h5>VMS</h5>
+                    <p>Your trusted partner in vaccination and immunization services. We provide safe, professional vaccination care with expert medical supervision.</p>
                     <div class="social-links mt-4">
                         <a href="#"><i class="fab fa-facebook-f"></i></a>
                         <a href="#"><i class="fab fa-twitter"></i></a>
@@ -522,8 +533,8 @@
                     <h5>Vaccine Services</h5>
                     <ul>
                         <li><a href="{% url 'service' %}">Infant Immunization</a></li>
-                        <li><a href="{% url 'service' %}">Childhood Vaccines</a></li>
-                        <li><a href="{% url 'service' %}">School-age Vaccines</a></li>
+                        <li><a href="{% url 'service' %}">Child Vaccines</a></li>
+                        <li><a href="{% url 'service' %}">Adult Vaccines</a></li>
                         <li><a href="{% url 'vaccine' %}">Vaccine Information</a></li>
                     </ul>
                 </div>
@@ -560,7 +571,7 @@
             </div>
             
             <div class="copyright">
-                <p>Copyright ©2025 All rights reserved | HealthCoach Vaccination Services</p>
+                <p>Copyright ©2025 All rights reserved | VMS - Vaccine Management System</p>
             </div>
         </div>
     </footer>

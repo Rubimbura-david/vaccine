@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Notification{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="fas fa-edit me-2"></i>
+                    Edit Notification
+                </h1>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bell me-2"></i>
+                        Edit Notification
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'edit_notification' notification.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ next }}">
+                        
+                        <!-- Basic Notification Fields -->
+                        <h6 class="fw-bold text-primary mb-3">📋 Basic Information</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Title</label>
+                            <input type="text" class="form-control" name="title" value="{{ notification.title }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Message</label>
+                            <textarea class="form-control" name="message" rows="4" required>{{ notification.message }}</textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Notification Type</label>
+                                <select class="form-select" name="notification_type">
+                                    <option value="info" {% if notification.notification_type == 'info' %}selected{% endif %}>Information</option>
+                                    <option value="success" {% if notification.notification_type == 'success' %}selected{% endif %}>Success</option>
+                                    <option value="warning" {% if notification.notification_type == 'warning' %}selected{% endif %}>Warning</option>
+                                    <option value="danger" {% if notification.notification_type == 'danger' %}selected{% endif %}>Danger</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label form-check-label">Recipient</label>
+                                <div class="form-check mt-2">
+                                    <input type="checkbox" class="form-check-input" name="is_for_all" id="isForAll" {% if notification.is_for_all %}checked{% endif %}>
+                                    <label class="form-check-label" for="isForAll">Send to all patients</label>
+                                </div>
+                                {% if notification.recipient %}
+                                <p class="text-muted small mt-2">Current recipient: {{ notification.recipient.username }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if notification.schedule %}
+                        <!-- Vaccination Schedule Details -->
+                        <h6 class="fw-bold text-primary mt-4 mb-3">📅 Vaccination Schedule Details</h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Vaccine</label>
+                                <select class="form-select" name="vaccine_name">
+                                    <option value="All Vaccines" {% if notification.schedule.vaccine.name == "All Vaccines" or not notification.schedule.vaccine %}selected{% endif %}>All Vaccines</option>
+                                    {% for vaccine in vaccines %}
+                                    <option value="{{ vaccine.name }}" {% if notification.schedule.vaccine and notification.schedule.vaccine.name == vaccine.name %}selected{% endif %}>{{ vaccine.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Scheduled Date</label>
+                                <input type="date" class="form-control" name="scheduled_date" value="{{ notification.schedule.scheduled_date|date:'Y-m-d' }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Start Time</label>
+                                <input type="time" class="form-control" name="start_time" value="{{ notification.schedule.start_time|time:'H:i' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">End Time</label>
+                                <input type="time" class="form-control" name="end_time" value="{{ notification.schedule.end_time|time:'H:i' }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Location</label>
+                                <input type="text" class="form-control" name="location" value="{{ notification.schedule.location }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Contact Phone</label>
+                                <input type="text" class="form-control" name="contact_phone" value="{{ notification.schedule.contact_phone|default:'' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Address</label>
+                            <textarea class="form-control" name="address" rows="2">{{ notification.schedule.address|default:'' }}</textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Target Age Groups</label>
+                                <input type="text" class="form-control" name="target_age_groups" value="{{ notification.schedule.target_age_groups|default:'' }}" placeholder="e.g., 0-2 years, 5-12 years">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Maximum Capacity</label>
+                                <input type="number" class="form-control" name="max_capacity" value="{{ notification.schedule.max_capacity }}" min="0">
+                                <small class="text-muted">(0 = Unlimited)</small>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Contact Email</label>
+                                <input type="email" class="form-control" name="contact_email" value="{{ notification.schedule.contact_email|default:'' }}" placeholder="clinic@example.com">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check mt-4">
+                                    <input type="checkbox" class="form-check-input" name="is_published" id="isPublished" {% if notification.schedule.is_published %}checked{% endif %}>
+                                    <label class="form-check-label" for="isPublished">Published</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Additional Notes</label>
+                            <textarea class="form-control" name="notes" rows="2">{{ notification.schedule.notes|default:'' }}</textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" name="requires_registration" id="requiresRegistration" {% if notification.schedule.requires_registration %}checked{% endif %}>
+                                    <label class="form-check-label" for="requiresRegistration">Requires registration</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" name="is_active" id="isActive" {% if notification.schedule.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="isActive">Active</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" name="schedule_id" value="{{ notification.schedule.id }}">
+                        
+                        {% else %}
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            This notification is not linked to any schedule.
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-secondary" onclick="cancelForm()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Cancel form and return to previous page
+function cancelForm() {
+    if (confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
+        window.history.back();
+    }
+}
+</script>
+{% endblock %}

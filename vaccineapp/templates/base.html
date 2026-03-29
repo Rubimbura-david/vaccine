@@ -1,16 +1,116 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ request.session.language|default:'en' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}vaccine{% endblock %}</title>
+    <title>{% block title %}Vaccine Management System{% endblock %}</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    
+    <!-- Theme CSS -->
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #212529;
+            --card-bg: #ffffff;
+            --border-color: #dee2e6;
+        }
+        
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+            --card-bg: #2d2d2d;
+            --border-color: #404040;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-color: var(--border-color);
+        }
+        
+        /* Font sizes */
+        body[data-font-size="small"] {
+            font-size: 14px;
+        }
+        
+        body[data-font-size="medium"] {
+            font-size: 16px;
+        }
+        
+        body[data-font-size="large"] {
+            font-size: 18px;
+        }
+        
+        /* Dark mode specific */
+        [data-theme="dark"] .navbar {
+            background-color: #000000 !important;
+        }
+        
+        [data-theme="dark"] .table {
+            color: var(--text-color);
+        }
+        
+        [data-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        [data-theme="dark"] .form-control,
+        [data-theme="dark"] .form-select {
+            background-color: #3d3d3d;
+            border-color: #555;
+            color: var(--text-color);
+        }
+        
+        [data-theme="dark"] .dropdown-menu {
+            background-color: #2d2d2d;
+            border-color: #404040;
+        }
+        
+        [data-theme="dark"] .dropdown-item {
+            color: var(--text-color);
+        }
+        
+        [data-theme="dark"] .dropdown-item:hover {
+            background-color: #404040;
+        }
+        
+        [data-theme="dark"] .alert-info {
+            background-color: #0c5460;
+            border-color: #0c5460;
+            color: #d1ecf1;
+        }
+        
+        [data-theme="dark"] .footer {
+            background-color: #000000;
+            color: #ffffff;
+        }
+    </style>
+    
+    <!-- Apply theme from session -->
+    <script>
+        // Apply theme immediately to prevent flash
+        const theme = localStorage.getItem('theme') || '{{ request.session.theme|default:"light" }}';
+        const fontSize = localStorage.getItem('fontSize') || '{{ request.session.font_size|default:"medium" }}';
+        
+        document.documentElement.setAttribute('data-theme', theme);
+        document.body.setAttribute('data-font-size', fontSize);
+        
+        // Save to localStorage
+        localStorage.setItem('theme', theme);
+        localStorage.setItem('fontSize', fontSize);
+    </script>
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -19,7 +119,7 @@
         <div class="container">
             <a class="navbar-brand" href="{% url 'index' %}">
                 <i class="fas fa-syringe me-2"></i>
-                HealthCoach
+                VMS
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -57,6 +157,9 @@
                             <li><a class="dropdown-item" href="{% url 'dashboard' %}">
                                 <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                             </a></li>
+                            <li><a class="dropdown-item" href="{% url 'settings' %}">
+                                <i class="fas fa-cog me-2"></i>Settings
+                            </a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="post" action="{% url 'logout' %}" class="d-inline">
@@ -72,17 +175,19 @@
             </div>
         </div>
     </nav>
-<!-- Add this somewhere in your base.html for debugging -->
-<div class="container mt-2">
-    <div class="alert alert-info d-none d-md-block">
-        <small>
-            Debug: 
-            User: {{ user.username }} | 
-            Authenticated: {{ user.is_authenticated }} | 
-            Page: {{ request.path }}
-        </small>
+    
+    <!-- Debug Alert -->
+    <div class="container mt-2">
+        <div class="alert alert-info d-none d-md-block">
+            <small>
+                Debug: 
+                User: {{ user.username }} | 
+                Authenticated: {{ user.is_authenticated }} | 
+                Page: {{ request.path }}
+            </small>
+        </div>
     </div>
-</div>
+    
     <!-- Messages -->
     {% if messages %}
     <div class="container mt-5 pt-5">
@@ -110,7 +215,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-12 text-center">
-                    <p>Copyright ©2025 All rights reserved | HealthCoach Vaccination Services</p>
+                    <p>Copyright ©2025 All rights reserved | VMS - Vaccine Management System</p>
                 </div>
             </div>
         </div>
@@ -121,6 +226,27 @@
     
     <!-- Custom JavaScript -->
     <script src="{% static 'js/script.js' %}"></script>
+    
+    <!-- Theme toggler script -->
+    <script>
+        // Function to apply theme
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        }
+        
+        // Function to apply font size
+        function applyFontSize(size) {
+            document.body.setAttribute('data-font-size', size);
+            localStorage.setItem('fontSize', size);
+        }
+        
+        // Listen for settings changes (can be called from settings page)
+        window.updateSettings = function(theme, fontSize) {
+            if (theme) applyTheme(theme);
+            if (fontSize) applyFontSize(fontSize);
+        };
+    </script>
     
     {% block extra_js %}{% endblock %}
 </body>

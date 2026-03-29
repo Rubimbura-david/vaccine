@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}About Us - HealthCoach{% endblock %}
+{% block title %}About Us - VMS{% endblock %}
 {% block extra_css %}
 <!-- About page specific CSS -->
 <link rel="stylesheet" href="{% static 'css/about.css' %}">
@@ -13,8 +13,8 @@
     <div class="container">
         <div class="row">
             <div class="col-md-8 mx-auto text-center">
-                <h1>About HealthCoach</h1>
-                <p class="lead">Your trusted partner in vaccination and child healthcare</p>
+                <h1>About VMS</h1>
+                <p class="lead">Your trusted partner in vaccination and healthcare</p>
             </div>
         </div>
     </div>
@@ -27,8 +27,8 @@
             <div class="col-lg-6">
                 <h2 class="section-title">Our Mission</h2>
                 <p class="mission-text">
-                    At HealthCoach, we are dedicated to protecting children and families through comprehensive 
-                    vaccination services. Our mission is to ensure every child receives timely immunizations 
+                    At VMS, we are dedicated to protecting individuals and communities through comprehensive 
+                    vaccination services. Our mission is to ensure everyone receives timely immunizations 
                     in a safe, caring environment, supported by expert medical professionals and evidence-based practices.
                 </p>
                 <div class="mission-stats row mt-4">
@@ -38,7 +38,7 @@
                     </div>
                     <div class="col-4 text-center">
                         <h3 class="stat-number">25+</h3>
-                        <p class="stat-label">Certified Pediatricians</p>
+                        <p class="stat-label">Certified Specialists</p>
                     </div>
                     <div class="col-4 text-center">
                         <h3 class="stat-number">15+</h3>
@@ -60,7 +60,7 @@
         <div class="row">
             <div class="col-12 text-center mb-5">
                 <h2 class="section-title">Meet Our Medical Team</h2>
-                <p class="section-subtitle">Certified pediatricians and vaccination specialists</p>
+                <p class="section-subtitle">Certified immunization specialists and healthcare professionals</p>
             </div>
         </div>
         <div class="row">
@@ -69,8 +69,8 @@
                     <img src="{% static 'img/pediatrician-1.jpg' %}" 
                          alt="Dr. Sarah Johnson" class="team-img">
                     <h4 class="team-name">Dr. Sarah Johnson</h4>
-                    <p class="team-role">Head Pediatrician</p>
-                    <p class="team-bio">15+ years experience in child healthcare and immunization.</p>
+                    <p class="team-role">Lead Immunization Specialist</p>
+                    <p class="team-bio">15+ years experience in vaccination and public health.</p>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6 mb-4">
@@ -88,7 +88,7 @@
                          alt="Emily Rodriguez" class="team-img">
                     <h4 class="team-name">Emily Rodriguez</h4>
                     <p class="team-role">Nurse Practitioner</p>
-                    <p class="team-bio">Specialized in pediatric care and vaccination administration.</p>
+                    <p class="team-bio">Specialized in vaccination administration and patient care.</p>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6 mb-4">
@@ -96,8 +96,8 @@
                     <img src="{% static 'img/child-health.jpg' %}" 
                          alt="Lisa Thompson" class="team-img">
                     <h4 class="team-name">Dr. Lisa Thompson</h4>
-                    <p class="team-role">Child Health Expert</p>
-                    <p class="team-bio">Focus on preventive care and childhood development.</p>
+                    <p class="team-role">Public Health Expert</p>
+                    <p class="team-bio">Focus on preventive care and community health.</p>
                 </div>
             </div>
         </div>
@@ -119,16 +119,16 @@
                         <i class="fas fa-shield-alt"></i>
                     </div>
                     <h4>Safety First</h4>
-                    <p>We prioritize your child's safety with proper vaccine storage, handling, and administration protocols.</p>
+                    <p>We prioritize your safety with proper vaccine storage, handling, and administration protocols.</p>
                 </div>
             </div>
             <div class="col-md-4 mb-4">
                 <div class="value-card text-center">
                     <div class="value-icon">
-                        <i class="fas fa-baby"></i>
+                        <i class="fas fa-heart"></i>
                     </div>
-                    <h4>Child-Centered Care</h4>
-                    <p>Our approach is tailored to make vaccination experiences positive and stress-free for children.</p>
+                    <h4>Patient-Centered Care</h4>
+                    <p>Our approach is tailored to make vaccination experiences positive and stress-free for everyone.</p>
                 </div>
             </div>
             <div class="col-md-4 mb-4">
@@ -136,8 +136,8 @@
                     <div class="value-icon">
                         <i class="fas fa-graduation-cap"></i>
                     </div>
-                    <h4>Parent Education</h4>
-                    <p>We empower parents with knowledge about vaccines, schedules, and child healthcare.</p>
+                    <h4>Health Education</h4>
+                    <p>We empower individuals with knowledge about vaccines, schedules, and healthcare.</p>
                 </div>
             </div>
         </div>
@@ -169,7 +169,7 @@
                         <i class="fas fa-stethoscope"></i>
                     </div>
                     <h4>Sterile Environment</h4>
-                    <p>Clean, sanitized spaces designed specifically for pediatric vaccination.</p>
+                    <p>Clean, sanitized spaces designed specifically for safe vaccination.</p>
                 </div>
             </div>
             <div class="col-md-4 mb-4">
@@ -190,8 +190,8 @@
     <div class="container">
         <div class="row">
             <div class="col-md-8 mx-auto">
-                <h2 class="cta-title">Ready to Protect Your Child?</h2>
-                <p class="cta-text">Join thousands of families who trust HealthCoach for their vaccination needs.</p>
+                <h2 class="cta-title">Ready to Protect Your Health?</h2>
+                <p class="cta-text">Join thousands of individuals who trust VMS for their vaccination needs.</p>
                 <a href="{% url 'contact' %}" class="btn btn-light btn-lg cta-button">Schedule Vaccination</a>
             </div>
         </div>

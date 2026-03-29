@@ -1,0 +1,479 @@
+{% load static %}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-bell me-2"></i>
+        My Notifications
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button class="btn btn-sm {% if current_notification_filter == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}" onclick="filterNotifications('all')">
+                All ({{ total_notifications }})
+            </button>
+<button class="btn btn-sm {% if current_notification_filter == 'unread' %}btn-success{% else %}btn-outline-success{% endif %}" 
+        onclick="filterNotifications('unread')">
+    Unread (<span id="unread-count">{{ unread_count }}</span>)
+</button>
+        </div>
+        {% if notifications %}
+        <button class="btn btn-sm btn-danger" onclick="deleteAllNotifications()">
+            <i class="fas fa-trash me-1"></i> Delete All
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Notifications Container -->
+<div id="notifications-container">
+    {% for notification in notifications %}
+    <div class="card mb-3 notification-item {% if not notification.is_read %}border-warning{% endif %}" id="notification-{{ notification.id }}" data-read="{% if notification.is_read %}read{% else %}unread{% endif %}">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between">
+                        <h5 class="card-title">
+                            {% if not notification.is_read %}
+                                <span class="badge bg-warning me-2">New</span>
+                            {% endif %}
+                            {{ notification.title }}
+                        </h5>
+                        <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+                    </div>
+                    
+                    <p class="card-text">{{ notification.message }}</p>
+                    
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        <span class="badge 
+                            {% if notification.notification_type == 'info' %}bg-info
+                            {% elif notification.notification_type == 'success' %}bg-success
+                            {% elif notification.notification_type == 'warning' %}bg-warning
+                            {% elif notification.notification_type == 'danger' %}bg-danger
+                            {% endif %}">
+                            {{ notification.get_notification_type_display }}
+                        </span>
+                        
+                        {% if notification.is_for_all %}
+                            <span class="badge bg-info">
+                                <i class="fas fa-users me-1"></i> All Patients
+                            </span>
+                        {% endif %}
+                        
+                        {% if notification.schedule %}
+                            <span class="badge bg-primary">
+                                <i class="fas fa-calendar me-1"></i> Schedule
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="btn-group btn-group-sm mt-2">
+<button class="btn btn-outline-info" onclick="viewAndMarkRead(
+    {{ notification.id }}, 
+    '{{ notification.title|escapejs }}', 
+    '{{ notification.message|escapejs }}', 
+    '{{ notification.created_at|date:"F j, Y g:i A" }}', 
+    '{{ notification.get_notification_type_display }}',
+    {% if notification.schedule %}
+        '{{ notification.schedule.start_time|time:"g:i A" }}',
+        '{{ notification.schedule.end_time|time:"g:i A" }}',
+        '{{ notification.schedule.location|escapejs }}',
+        '{{ notification.schedule.contact_phone|default:"Not provided"|escapejs }}',
+        '{{ notification.schedule.contact_email|default:"Not provided"|escapejs }}',
+        '{{ notification.schedule.address|default:"Not provided"|escapejs }}',
+        '{{ notification.schedule.target_age_groups|default:"All ages"|escapejs }}',
+        '{{ notification.schedule.max_capacity|default:"Unlimited" }}',
+        '{{ notification.schedule.notes|default:"No additional notes"|escapejs }}'
+    {% else %}
+        null, null, null, null, null, null, null, null, null
+    {% endif %}
+)">
+    <i class="fas fa-eye me-1"></i> View
+</button>
+{% if not notification.is_read %}
+<button class="btn btn-outline-success" onclick="markAsRead({{ notification.id }})">
+    <i class="fas fa-check me-1"></i> Mark as Read
+</button>
+{% endif %}
+                        
+                        <button class="btn btn-outline-danger" onclick="deleteNotification({{ notification.id }})">
+                            <i class="fas fa-trash me-1"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="text-center py-5">
+        <i class="fas fa-bell-slash fa-4x text-muted mb-3"></i>
+        <h4 class="text-muted">No Notifications</h4>
+        <p class="text-muted">You don't have any notifications at the moment.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- View Notification Modal -->
+<div class="modal fade" id="viewNotificationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Notification Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6 id="modalTitle" class="fw-bold"></h6>
+                <p id="modalMessage" class="mt-3"></p>
+                <div class="mt-3">
+                    <span id="modalType" class="badge"></span>
+                    <span id="modalTime" class="text-muted small ms-2"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// CSRF token helper
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Filter notifications
+function filterNotifications(type) {
+    console.log('Filtering:', type);
+    
+    // Update button styles
+    const buttons = document.querySelectorAll('.btn-group .btn');
+    buttons.forEach(btn => {
+        btn.classList.remove('btn-primary', 'btn-success');
+        btn.classList.add('btn-outline-primary', 'btn-outline-success');
+    });
+    
+    if (type === 'all') {
+        buttons[0].classList.remove('btn-outline-primary');
+        buttons[0].classList.add('btn-primary');
+        // Show all notifications
+        document.querySelectorAll('.notification-item').forEach(item => {
+            item.style.display = 'block';
+        });
+    } else {
+        buttons[1].classList.remove('btn-outline-success');
+        buttons[1].classList.add('btn-success');
+        // Show only unread
+        document.querySelectorAll('.notification-item').forEach(item => {
+            if (item.dataset.read === 'unread') {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+}
+
+// View and mark as read with full details
+function viewAndMarkRead(id, title, message, time, type, 
+                        startTime, endTime, location, contactPhone, 
+                        contactEmail, address, targetAgeGroups, 
+                        maxCapacity, notes) {
+    
+    // First mark as read
+    fetch(`/api/notifications/${id}/read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateUnreadCard();
+        }
+        
+        // Build schedule details HTML if available
+        let scheduleHtml = '';
+        if (startTime && startTime !== 'null') {
+            scheduleHtml = `
+                <div class="mt-4 p-3 bg-light rounded">
+                    <h6 class="fw-bold text-primary">Vaccination Schedule Details</h6>
+                    <table class="table table-sm table-borderless mt-2">
+                        <tr>
+                            <td style="width: 40%"><strong>Start Time:</strong></td>
+                            <td>${startTime}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>End Time:</strong></td>
+                            <td>${endTime}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Location:</strong></td>
+                            <td>${location}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Address:</strong></td>
+                            <td>${address}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Contact Phone:</strong></td>
+                            <td>${contactPhone}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Contact Email:</strong></td>
+                            <td>${contactEmail}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Target Age Groups:</strong></td>
+                            <td>${targetAgeGroups}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Maximum Capacity:</strong></td>
+                            <td>${maxCapacity}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Additional Notes:</strong></td>
+                            <td>${notes}</td>
+                        </tr>
+                    </table>
+                </div>
+            `;
+        }
+        
+        // Show modal with all details
+        const modalHtml = `
+            <div class="modal fade" id="notificationDetailModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-info text-white">
+                            <h5 class="modal-title">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Notification Details
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <h6 class="fw-bold">${title}</h6>
+                            <p class="mt-3">${message}</p>
+                            
+                            <div class="mt-3">
+                                <span class="badge ${getTypeClass(type)}">${type}</span>
+                                <small class="text-muted d-block mt-2">Received: ${time}</small>
+                            </div>
+                            
+                            ${scheduleHtml}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const existingModal = document.getElementById('notificationDetailModal');
+        if (existingModal) existingModal.remove();
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        const modal = new bootstrap.Modal(document.getElementById('notificationDetailModal'));
+        modal.show();
+        
+        document.getElementById('notificationDetailModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to load notification details');
+    });
+}
+
+// Keep original viewNotification for backward compatibility
+function viewNotification(id, title, message, time, type) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMessage').textContent = message;
+    document.getElementById('modalTime').textContent = time;
+    
+    const typeSpan = document.getElementById('modalType');
+    typeSpan.textContent = type;
+    typeSpan.className = 'badge';
+    
+    if (type.includes('Info')) typeSpan.classList.add('bg-info');
+    else if (type.includes('Success')) typeSpan.classList.add('bg-success');
+    else if (type.includes('Warning')) typeSpan.classList.add('bg-warning');
+    else if (type.includes('Danger')) typeSpan.classList.add('bg-danger');
+    else typeSpan.classList.add('bg-secondary');
+    
+    const modal = new bootstrap.Modal(document.getElementById('viewNotificationModal'));
+    modal.show();
+}
+
+// Mark as read (updated to remove immediately)
+function markAsRead(notificationId) {
+    fetch(`/api/notifications/${notificationId}/read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update UI immediately
+            const element = document.getElementById(`notification-${notificationId}`);
+            element.classList.remove('border-warning');
+            element.dataset.read = 'read';
+            
+            // Remove the New badge
+            const badge = element.querySelector('.badge.bg-warning');
+            if (badge) badge.remove();
+            
+            // Remove the Mark as Read button
+            const markBtn = element.querySelector('.btn-outline-success');
+            if (markBtn) markBtn.remove();
+            
+            // Update unread count
+            updateUnreadCount();
+        }
+    })
+    .catch(error => {
+        console.error('Error marking as read:', error);
+        alert('Failed to mark notification as read');
+    });
+}
+
+// Delete single notification
+function deleteNotification(notificationId) {
+    if (!confirm('Are you sure you want to delete this notification?')) return;
+    
+    fetch(`/api/notifications/${notificationId}/delete/`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const element = document.getElementById(`notification-${notificationId}`);
+            element.remove();
+            
+            // Update counts
+            updateUnreadCount();
+            
+            // Check if container is empty
+            const container = document.getElementById('notifications-container');
+            if (container.children.length === 0) {
+                // Show empty state message
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-bell-slash fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">No Notifications</h4>
+                        <p class="text-muted">You don't have any notifications at the moment.</p>
+                    </div>
+                `;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting notification:', error);
+        alert('Failed to delete notification');
+    });
+}
+
+// Delete all notifications
+function deleteAllNotifications() {
+    if (!confirm('Delete ALL notifications? This action cannot be undone.')) return;
+    
+    fetch('/api/notifications/delete-all/', {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting all notifications:', error);
+        alert('Failed to delete all notifications');
+    });
+}
+
+// Update unread count in the button
+function updateUnreadCount() {
+    const unreadCount = document.querySelectorAll('.notification-item[data-read="unread"]').length;
+    const unreadBtn = document.querySelector('.btn-group .btn:last-child');
+    if (unreadBtn) {
+        unreadBtn.innerHTML = `Unread (${unreadCount})`;
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Check URL for filter parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const filter = urlParams.get('filter') || 'all';
+    filterNotifications(filter);
+});
+</script>
+<script>
+// Simple function to update unread count
+function updateUnreadCountDisplay() {
+    const unreadElements = document.querySelectorAll('.notification-item[data-read="unread"]');
+    document.getElementById('unread-count').textContent = unreadElements.length;
+}
+
+// Update after any action
+function markAsRead(notificationId) {
+    fetch(`/api/notifications/${notificationId}/read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const element = document.getElementById(`notification-${notificationId}`);
+            element.classList.remove('border-warning');
+            element.dataset.read = 'read';
+            
+            const badge = element.querySelector('.badge.bg-warning');
+            if (badge) badge.remove();
+            
+            const markBtn = element.querySelector('.btn-outline-success');
+            if (markBtn) markBtn.remove();
+            
+            // Update the count
+            updateUnreadCountDisplay();
+        }
+    });
+}
+
+// Update on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateUnreadCountDisplay();
+});
+</script>

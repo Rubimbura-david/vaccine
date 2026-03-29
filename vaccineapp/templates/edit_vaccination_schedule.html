@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Vaccination Schedule{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="fas fa-calendar-edit me-2"></i>
+                    Edit Vaccination Schedule
+                </h1>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit me-2"></i>
+                        Edit: {{ schedule.title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- IMPORTANT: Added action attribute to point to the correct edit URL -->
+                    <form method="post" action="{% url 'edit_vaccination_schedule' schedule.id %}" id="editScheduleForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Title <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="title" value="{{ schedule.title }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Description <span class="text-danger">*</span></label>
+                                <textarea class="form-control" name="description" rows="3" required>{{ schedule.description }}</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Vaccine</label>
+                                <select class="form-select" name="vaccine">
+                                    <option value="">All Vaccines</option>
+                                    {% for vaccine in vaccines %}
+                                    <option value="{{ vaccine.id }}" {% if schedule.vaccine and schedule.vaccine.id == vaccine.id %}selected{% endif %}>{{ vaccine.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Scheduled Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" name="scheduled_date" value="{{ schedule.scheduled_date|date:'Y-m-d' }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Start Time <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" name="start_time" value="{{ schedule.start_time|time:'H:i' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">End Time <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" name="end_time" value="{{ schedule.end_time|time:'H:i' }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Location <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="location" value="{{ schedule.location }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Contact Phone</label>
+                                <input type="text" class="form-control" name="contact_phone" value="{{ schedule.contact_phone|default:'' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Address</label>
+                                <textarea class="form-control" name="address" rows="2">{{ schedule.address|default:'' }}</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Target Age Groups</label>
+                                <input type="text" class="form-control" name="target_age_groups" value="{{ schedule.target_age_groups|default:'' }}" placeholder="e.g., 0-2 years, 5-12 years">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Maximum Capacity</label>
+                                <input type="number" class="form-control" name="max_capacity" value="{{ schedule.max_capacity }}" min="0">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" name="is_for_all" id="isForAll" {% if schedule.is_for_all %}checked{% endif %}>
+                                    <label class="form-check-label" for="isForAll">Available for all patients</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" name="requires_registration" id="requiresRegistration" {% if schedule.requires_registration %}checked{% endif %}>
+                                    <label class="form-check-label" for="requiresRegistration">Requires registration</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" name="is_published" id="isPublished" {% if schedule.is_published %}checked{% endif %}>
+                                    <label class="form-check-label" for="isPublished">Publish to patients</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Contact Email</label>
+                                <input type="email" class="form-control" name="contact_email" value="{{ schedule.contact_email|default:'' }}" placeholder="clinic@example.com">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check mt-4">
+                                    <input type="checkbox" class="form-check-input" name="is_active" id="isActive" {% if schedule.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="isActive">Active</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Additional Notes</label>
+                                <textarea class="form-control" name="notes" rows="2">{{ schedule.notes|default:'' }}</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'vaccination_schedule_management' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

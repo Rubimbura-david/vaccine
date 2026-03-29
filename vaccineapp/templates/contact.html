@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Contact Us - HealthCoach{% endblock %}
+{% block title %}Contact Us - VMS{% endblock %}
 
 {% block extra_css %}
 <!-- Contact page specific CSS -->
@@ -15,7 +15,7 @@
         <div class="row">
             <div class="col-md-8 mx-auto">
                 <h1>Contact us</h1>
-                <p class="lead">Get in touch to schedule vaccinations or discuss your child's healthcare needs</p>
+                <p class="lead">Get in touch to schedule vaccinations or discuss your healthcare needs</p>
             </div>
         </div>
     </div>
@@ -28,7 +28,7 @@
             <div class="col-lg-5 mb-4 mb-lg-0">
                 <div class="contact-info">
                     <h3 class="mb-4">Get in touch</h3>
-                    <p class="mb-4">We're here to answer your questions about vaccination schedules, child healthcare, and our services.</p>
+                    <p class="mb-4">We're here to answer your questions about vaccination schedules, healthcare, and our services.</p>
                     
                     <div class="mb-4">
                         <h5><i class="fas fa-map-marker-alt me-2"></i>Address</h5>
@@ -42,12 +42,12 @@
                     
                     <div class="mb-4">
                         <h5><i class="fas fa-envelope me-2"></i>Email</h5>
-                        <p>info@healthcoach.com</p>
+                        <p>info@vms.com</p>
                     </div>
                     
                     <div class="mb-4">
                         <h5><i class="fas fa-globe me-2"></i>Website</h5>
-                        <p>www.healthcoach.com</p>
+                        <p>www.vms.com</p>
                     </div>
 
                     <div class="mb-4">
@@ -89,14 +89,14 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="childAge" class="form-label">CHILD'S AGE</label>
-                                    <select class="form-control" id="childAge">
+                                    <label for="ageGroup" class="form-label">AGE GROUP (if applicable)</label>
+                                    <select class="form-control" id="ageGroup">
                                         <option value="">Select Age Group</option>
-                                        <option value="newborn">Newborn (0-2 months)</option>
-                                        <option value="infant">Infant (2-12 months)</option>
-                                        <option value="toddler">Toddler (1-3 years)</option>
-                                        <option value="preschool">Preschool (3-5 years)</option>
-                                        <option value="schoolage">School Age (5+ years)</option>
+                                        <option value="infant">Infant (0-12 months)</option>
+                                        <option value="child">Child (1-12 years)</option>
+                                        <option value="adolescent">Adolescent (13-17 years)</option>
+                                        <option value="adult">Adult (18+ years)</option>
+                                        <option value="senior">Senior (65+ years)</option>
                                     </select>
                                 </div>
                             </div>

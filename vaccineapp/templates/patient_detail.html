@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Patient Details - {{ patient.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="fas fa-user me-2"></i>
+                    Patient Details: {{ patient.full_name }}
+                </h1>
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Patient Information Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-id-card me-2"></i>
+                        Patient Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        {% if patient.user.userprofile.profile_image %}
+                            <img src="{{ patient.user.userprofile.profile_image.url }}" class="rounded-circle img-fluid" style="width: 120px; height: 120px; object-fit: cover;" alt="{{ patient.full_name }}">
+                        {% else %}
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 120px; height: 120px; font-size: 48px;">
+                                {{ patient.first_name|first|upper }}{{ patient.last_name|first|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Full Name:</th>
+                            <td>{{ patient.full_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Age:</th>
+                            <td>{{ patient.age }} years</td>
+                        </tr>
+                        <tr>
+                            <th>Date of Birth:</th>
+                            <td>{{ patient.date_of_birth|date:"F d, Y" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Gender:</th>
+                            <td>{{ patient.get_gender_display }}</td>
+                        </tr>
+                        <tr>
+                            <th>Blood Type:</th>
+                            <td>{{ patient.blood_type|default:"Not specified" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Phone:</th>
+                            <td>{{ patient.patient_phone|default:"Not specified" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Email:</th>
+                            <td>{{ patient.patient_email|default:"Not specified" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="col-md-8 mb-4">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h3>{{ total_vaccinations }}</h3>
+                            <p class="mb-0">Total Vaccinations</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h3>{{ completed_vaccinations }}</h3>
+                            <p class="mb-0">Completed</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <h3>{{ upcoming_vaccinations }}</h3>
+                            <p class="mb-0">Upcoming</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Medical Information -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-notes-medical me-2"></i>
+                        Medical Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Allergies:</h6>
+                            <p>{{ patient.allergies|default:"No known allergies" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Medical Conditions:</h6>
+                            <p>{{ patient.medical_conditions|default:"None" }}</p>
+                        </div>
+                        <div class="col-12">
+                            <h6>Current Medications:</h6>
+                            <p>{{ patient.current_medications|default:"None" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vaccination Records -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-syringe me-2"></i>
+                        Vaccination Records
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Vaccine</th>
+                                    <th>Dose</th>
+                                    <th>Date Administered</th>
+                                    <th>Next Due Date</th>
+                                    <th>Status</th>
+                                    <th>Administered By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in vaccination_records %}
+                                <tr>
+                                    <td>{{ record.vaccine.name }}</td>
+                                    <td>Dose {{ record.dose_number }}/{{ record.total_doses }}</td>
+                                    <td>{{ record.date_administered|date:"M d, Y" }}</td>
+                                    <td>{{ record.next_due_date|date:"M d, Y"|default:"N/A" }}</td>
+                                    <td>
+                                        <span class="badge {% if record.status == 'administered' %}bg-success{% elif record.status == 'scheduled' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                            {{ record.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ record.administered_by.get_full_name|default:"Not recorded" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">
+                                        No vaccination records found.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

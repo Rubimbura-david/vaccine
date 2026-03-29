@@ -1,0 +1,255 @@
+{% load static %}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-prescription me-2"></i>
+        My Prescriptions
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="fas fa-print me-1"></i> Print All
+        </button>
+    </div>
+</div>
+
+<style>
+    .prescription-card {
+        border-left: 4px solid #007bff;
+        transition: all 0.3s ease;
+    }
+    .prescription-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .prescription-card.active {
+        border-left-color: #28a745;
+    }
+    .prescription-card.completed {
+        border-left-color: #6c757d;
+    }
+    .medication-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 3px solid #17a2b8;
+    }
+    .advice-list li {
+        margin-bottom: 8px;
+        padding-left: 10px;
+        border-left: 2px solid #28a745;
+    }
+</style>
+
+<!-- Prescription Stats -->
+<div class="row mb-4">
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Prescriptions</h6>
+                        <h3 class="card-number">{{ total_prescriptions|default:"0" }}</h3>
+                        <span class="text-primary">
+                            <i class="fas fa-file-medical me-1"></i> All time
+                        </span>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-prescription"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Active Prescriptions</h6>
+                        <h3 class="card-number">{{ active_prescriptions|default:"0" }}</h3>
+                        <span class="text-warning">
+                            <i class="fas fa-clock me-1"></i> Current
+                        </span>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-pills"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Last Prescription</h6>
+                        <h3 class="card-number">{{ last_prescription_date|default:"N/A" }}</h3>
+                        <span class="text-success">
+                            <i class="fas fa-check-circle me-1"></i> Completed
+                        </span>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-history"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prescriptions List -->
+<div class="row">
+    <div class="col-12">
+        {% for prescription in prescriptions %}
+        <div class="card prescription-card mb-4 {% if prescription.status == 'active' %}active{% else %}completed{% endif %}">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-1">Prescription #{{ prescription.id }}</h5>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-calendar me-1"></i> {{ prescription.date_issued|date:"F d, Y" }}
+                            • 
+                            <i class="fas fa-user-md me-1"></i> {{ prescription.doctor.user.get_full_name|default:"Doctor" }}
+                            <span class="badge bg-secondary ms-2">{{ prescription.doctor.specialization|default:"General" }}</span>
+                        </p>
+                    </div>
+                    <div>
+                        {% if prescription.status == 'active' %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Completed</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Symptoms and Diagnosis -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-notes-medical me-2 text-primary"></i>Reported Symptoms</h6>
+                        <div class="alert alert-light">
+                            {{ prescription.symptoms|default:"No symptoms recorded" }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-diagnoses me-2 text-success"></i>Diagnosis</h6>
+                        <div class="alert alert-success">
+                            <strong>{{ prescription.diagnosis|default:"No diagnosis recorded" }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Medications -->
+                <h6 class="mb-3"><i class="fas fa-pills me-2 text-info"></i>Prescribed Medications</h6>
+                <div class="row mb-4">
+                    {% for medication in prescription.medications.all %}
+                    <div class="col-lg-6 mb-3">
+                        <div class="card medication-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title text-primary">{{ medication.name }}</h6>
+                                    <span class="badge bg-info">{{ medication.purpose|default:"Medication" }}</span>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small><strong>Dosage:</strong><br>{{ medication.dosage }}</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <small><strong>Frequency:</strong><br>{{ medication.frequency }}</small>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-6">
+                                        <small><strong>Duration:</strong><br>{{ medication.duration }}</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <small><strong>Instructions:</strong><br>{{ medication.instructions|default:"Follow prescription" }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <p class="text-muted">No medications listed.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Medical Advice -->
+                {% if prescription.medical_advice %}
+                <h6 class="mb-3"><i class="fas fa-heartbeat me-2 text-warning"></i>Medical Advice & Instructions</h6>
+                <div class="alert alert-warning">
+                    <p>{{ prescription.medical_advice }}</p>
+                </div>
+                {% endif %}
+
+                <!-- Follow-up and Pharmacy Notes -->
+                <div class="row mt-3">
+                    {% if prescription.follow_up %}
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-calendar-check me-2 text-success"></i>Follow-up</h6>
+                        <p class="text-muted">{{ prescription.follow_up }}</p>
+                    </div>
+                    {% endif %}
+                    {% if prescription.pharmacy_notes %}
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-clipboard-list me-2 text-secondary"></i>Pharmacy Notes</h6>
+                        <p class="text-muted">{{ prescription.pharmacy_notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-end mt-3">
+                    <button class="btn btn-outline-primary me-2" onclick="window.print()">
+                        <i class="fas fa-print me-1"></i> Print
+                    </button>
+                    {% if prescription.status == 'active' %}
+                    <button class="btn btn-warning" onclick="requestRefill({{ prescription.id }})">
+                        <i class="fas fa-sync me-1"></i> Request Refill
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <!-- No Prescriptions Message -->
+        <div class="text-center py-5">
+            <i class="fas fa-prescription fa-4x text-muted mb-3"></i>
+            <h3 class="text-muted">No Prescriptions Yet</h3>
+            <p class="text-muted">You don't have any prescriptions at the moment.</p>
+            <a href="#" onclick="loadConsultationPage(event); return false;" class="btn btn-primary">
+                <i class="fas fa-comment-medical me-1"></i> Start Consultation
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function requestRefill(prescriptionId) {
+    if (confirm('Would you like to request a refill for this prescription?')) {
+        fetch(`/prescriptions/refill/${prescriptionId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Refill request sent successfully!');
+            } else {
+                alert('Error requesting refill: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while requesting refill');
+        });
+    }
+}
+</script>

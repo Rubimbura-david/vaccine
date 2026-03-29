@@ -5,11 +5,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - HealthCoach</title>
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <style>
+        .password-strength {
+            height: 5px;
+            margin-top: 5px;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+        .strength-weak { background-color: #dc3545; width: 25%; }
+        .strength-fair { background-color: #ffc107; width: 50%; }
+        .strength-good { background-color: #17a2b8; width: 75%; }
+        .strength-strong { background-color: #28a745; width: 100%; }
+        .password-match { font-size: 0.85rem; margin-top: 5px; }
+        .match-success { color: #28a745; }
+        .match-error { color: #dc3545; }
+        .field-errors { list-style: none; padding: 0; margin: 5px 0 0; }
+        .field-errors li { color: #dc3545; font-size: 0.85rem; }
+    </style>
 </head>
 <body class="auth-body">
+    <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container">
             <a class="navbar-brand" href="{% url 'index' %}">
@@ -18,6 +39,7 @@
         </div>
     </nav>
 
+    <!-- Signup Section -->
     <section class="auth-section">
         <div class="container">
             <div class="row justify-content-center">
@@ -28,134 +50,239 @@
                             <p class="text-muted">Join HealthCoach to manage your family's vaccinations</p>
                         </div>
 
+                        <!-- Messages -->
                         {% if messages %}
                         <div class="messages mb-4">
                             {% for message in messages %}
                             <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} me-2"></i>
                                 {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
                             {% endfor %}
                         </div>
                         {% endif %}
 
-                        <form method="post" class="auth-form">
-                            {% csrf_token %}
-                            
-                            <!-- First Name Field -->
-                            <div class="mb-3">
-                                <label for="id_first_name" class="form-label">First Name</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
-                                    <input type="text" name="first_name" class="form-control" id="id_first_name" 
-                                           placeholder="Enter your first name" required
-                                           value="{{ form.first_name.value|default:'' }}">
-                                </div>
-                                {% if form.first_name.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.first_name.errors %}
-                                    {{ error }}
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                            </div>
+                        <!-- Form Errors Summary -->
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endif %}
 
-                            <!-- Last Name Field -->
-                            <div class="mb-3">
-                                <label for="id_last_name" class="form-label">Last Name</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
-                                    <input type="text" name="last_name" class="form-control" id="id_last_name" 
-                                           placeholder="Enter your last name" required
-                                           value="{{ form.last_name.value|default:'' }}">
-                                </div>
-                                {% if form.last_name.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.last_name.errors %}
-                                    {{ error }}
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                            </div>
+     <form method="post" class="auth-form" id="signupForm" novalidate>
+    {% csrf_token %}
+    
+    <!-- First Name Field -->
+    <div class="mb-3">
+        <label for="id_first_name" class="form-label">
+            <i class="fas fa-user me-1"></i>First Name <span class="text-danger">*</span>
+        </label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-user"></i></span>
+            <input type="text" 
+                   name="first_name" 
+                   class="form-control {% if form.first_name.errors %}is-invalid{% endif %}" 
+                   id="id_first_name" 
+                   placeholder="Enter your first name" 
+                   required
+                   value="{{ form.first_name.value|default:'' }}"
+                   aria-describedby="first_name_help">
+        </div>
+        {% if form.first_name.errors %}
+        <ul class="field-errors">
+            {% for error in form.first_name.errors %}
+            <li><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <small id="first_name_help" class="form-text text-muted">Enter your legal first name as it appears on ID.</small>
+    </div>
 
-                            <!-- Email Field -->
-                            <div class="mb-3">
-                                <label for="id_email" class="form-label">Email Address</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                                    <input type="email" name="email" class="form-control" id="id_email" 
-                                           placeholder="Enter your email" required
-                                           value="{{ form.email.value|default:'' }}">
-                                </div>
-                                {% if form.email.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.email.errors %}
-                                    {{ error }}
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                            </div>
+    <!-- Last Name Field -->
+    <div class="mb-3">
+        <label for="id_last_name" class="form-label">
+            <i class="fas fa-user me-1"></i>Last Name <span class="text-danger">*</span>
+        </label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-user"></i></span>
+            <input type="text" 
+                   name="last_name" 
+                   class="form-control {% if form.last_name.errors %}is-invalid{% endif %}" 
+                   id="id_last_name" 
+                   placeholder="Enter your last name" 
+                   required
+                   value="{{ form.last_name.value|default:'' }}">
+        </div>
+        {% if form.last_name.errors %}
+        <ul class="field-errors">
+            {% for error in form.last_name.errors %}
+            <li><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
 
-                            <!-- Username Field -->
-                            <div class="mb-3">
-                                <label for="id_username" class="form-label">Username</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
-                                    <input type="text" name="username" class="form-control" id="id_username" 
-                                           placeholder="Choose a username" required
-                                           value="{{ form.username.value|default:'' }}">
-                                </div>
-                                {% if form.username.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.username.errors %}
-                                    {{ error }}
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                            </div>
+    <!-- Email Field -->
+    <div class="mb-3">
+        <label for="id_email" class="form-label">
+            <i class="fas fa-envelope me-1"></i>Email Address <span class="text-danger">*</span>
+        </label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+            <input type="email" 
+                   name="email" 
+                   class="form-control {% if form.email.errors %}is-invalid{% endif %}" 
+                   id="id_email" 
+                   placeholder="Enter your email" 
+                   required
+                   value="{{ form.email.value|default:'' }}"
+                   aria-describedby="email_help">
+        </div>
+        {% if form.email.errors %}
+        <ul class="field-errors">
+            {% for error in form.email.errors %}
+            <li><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <small id="email_help" class="form-text text-muted">We'll never share your email with anyone else.</small>
+    </div>
 
-                            <!-- Password Field -->
-                            <div class="mb-3">
-                                <label for="id_password1" class="form-label">Password</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                    <input type="password" name="password1" class="form-control" id="id_password1" 
-                                           placeholder="Create a password" required>
-                                </div>
-                                {% if form.password1.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.password1.errors %}
-                                    {{ error }}
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                                <div class="form-text">
-                                    <small>Your password must contain at least 8 characters and can't be too common.</small>
-                                </div>
-                            </div>
+    <!-- Username Field -->
+    <div class="mb-3">
+        <label for="id_username" class="form-label">
+            <i class="fas fa-user-circle me-1"></i>Username <span class="text-danger">*</span>
+        </label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-user"></i></span>
+            <input type="text" 
+                   name="username" 
+                   class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
+                   id="id_username" 
+                   placeholder="Choose a username" 
+                   required
+                   value="{{ form.username.value|default:'' }}"
+                   aria-describedby="username_help"
+                   pattern="[a-zA-Z0-9_]+"
+                   title="Username can only contain letters, numbers, and underscores">
+        </div>
+        {% if form.username.errors %}
+        <ul class="field-errors">
+            {% for error in form.username.errors %}
+            <li><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <small id="username_help" class="form-text text-muted">Username can only contain letters, numbers, and underscores.</small>
+    </div>
 
-                            <!-- Confirm Password Field -->
-                            <div class="mb-4">
-                                <label for="id_password2" class="form-label">Confirm Password</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                    <input type="password" name="password2" class="form-control" id="id_password2" 
-                                           placeholder="Confirm your password" required>
-                                </div>
-                                {% if form.password2.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.password2.errors %}
-                                    {{ error }}
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                            </div>
+    <!-- ========== NEW STATUS FIELD ========== -->
+    <div class="mb-3">
+        <label for="user_status" class="form-label">
+            <i class="fas fa-user-tag me-1"></i>I am a <span class="text-danger">*</span>
+        </label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-tag"></i></span>
+            <select name="user_status" id="user_status" class="form-select" required>
+                <option value="" disabled selected>Select your role</option>
+                <option value="parent">👪 Parent/Guardian</option>
+                <option value="doctor">👨‍⚕️ Doctor</option>
+                <option value="nurse">👩‍⚕️ Nurse</option>
+                <option value="admin">👑 Administrator</option>
+            </select>
+        </div>
+        <small class="form-text text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            Select your role to determine your permissions in the system.
+        </small>
+    </div>
 
-                            <button type="submit" class="btn btn-primary w-100 auth-btn">
-                                <i class="fas fa-user-plus me-2"></i>Create Account
-                            </button>
-                        </form>
+    <!-- Password Field -->
+    <div class="mb-3">
+        <label for="id_password1" class="form-label">
+            <i class="fas fa-lock me-1"></i>Password <span class="text-danger">*</span>
+        </label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+            <input type="password" 
+                   name="password1" 
+                   class="form-control {% if form.password1.errors %}is-invalid{% endif %}" 
+                   id="id_password1" 
+                   placeholder="Create a password" 
+                   required
+                   aria-describedby="password_help">
+            <button class="btn btn-outline-secondary" type="button" id="togglePassword1">
+                <i class="fas fa-eye"></i>
+            </button>
+        </div>
+        {% if form.password1.errors %}
+        <ul class="field-errors">
+            {% for error in form.password1.errors %}
+            <li><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <div class="password-strength" id="passwordStrength"></div>
+        <div id="passwordStrengthText" class="small mt-1"></div>
+        <small id="password_help" class="form-text text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            Your password must contain at least 8 characters, can't be too common, and must include:
+            <ul class="mt-1">
+                <li id="length-check" class="text-muted"><i class="far fa-circle me-1"></i> At least 8 characters</li>
+                <li id="uppercase-check" class="text-muted"><i class="far fa-circle me-1"></i> At least one uppercase letter</li>
+                <li id="lowercase-check" class="text-muted"><i class="far fa-circle me-1"></i> At least one lowercase letter</li>
+                <li id="number-check" class="text-muted"><i class="far fa-circle me-1"></i> At least one number</li>
+            </ul>
+        </small>
+    </div>
 
+    <!-- Confirm Password Field -->
+    <div class="mb-4">
+        <label for="id_password2" class="form-label">
+            <i class="fas fa-lock me-1"></i>Confirm Password <span class="text-danger">*</span>
+        </label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+            <input type="password" 
+                   name="password2" 
+                   class="form-control {% if form.password2.errors %}is-invalid{% endif %}" 
+                   id="id_password2" 
+                   placeholder="Confirm your password" 
+                   required>
+            <button class="btn btn-outline-secondary" type="button" id="togglePassword2">
+                <i class="fas fa-eye"></i>
+            </button>
+        </div>
+        {% if form.password2.errors %}
+        <ul class="field-errors">
+            {% for error in form.password2.errors %}
+            <li><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <div id="passwordMatchMessage" class="password-match"></div>
+    </div>
+
+    <!-- Terms and Conditions Checkbox -->
+    <div class="mb-4 form-check">
+        <input type="checkbox" class="form-check-input" id="termsAgree" required>
+        <label class="form-check-label" for="termsAgree">
+            I agree to the <a href="#" target="_blank">Terms of Service</a> and 
+            <a href="#" target="_blank">Privacy Policy</a> <span class="text-danger">*</span>
+        </label>
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit" class="btn btn-primary w-100 auth-btn" id="submitBtn">
+        <i class="fas fa-user-plus me-2"></i>Create Account
+    </button>
+</form>
+                        <!-- Login Link -->
                         <div class="auth-footer text-center mt-4">
                             <p class="mb-0">
                                 Already have an account? 
@@ -163,6 +290,7 @@
                             </p>
                         </div>
 
+                        <!-- Terms Text -->
                         <div class="terms-text text-center mt-3">
                             <small class="text-muted">
                                 By creating an account, you agree to our 
@@ -176,6 +304,152 @@
         </div>
     </section>
 
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Password Validation Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const password1 = document.getElementById('id_password1');
+            const password2 = document.getElementById('id_password2');
+            const strengthBar = document.getElementById('passwordStrength');
+            const strengthText = document.getElementById('passwordStrengthText');
+            const matchMessage = document.getElementById('passwordMatchMessage');
+            const submitBtn = document.getElementById('submitBtn');
+            const termsCheckbox = document.getElementById('termsAgree');
+            
+            // Password requirements elements
+            const lengthCheck = document.getElementById('length-check');
+            const uppercaseCheck = document.getElementById('uppercase-check');
+            const lowercaseCheck = document.getElementById('lowercase-check');
+            const numberCheck = document.getElementById('number-check');
+
+            // Toggle password visibility
+            document.getElementById('togglePassword1').addEventListener('click', function() {
+                const type = password1.getAttribute('type') === 'password' ? 'text' : 'password';
+                password1.setAttribute('type', type);
+                this.querySelector('i').classList.toggle('fa-eye');
+                this.querySelector('i').classList.toggle('fa-eye-slash');
+            });
+
+            document.getElementById('togglePassword2').addEventListener('click', function() {
+                const type = password2.getAttribute('type') === 'password' ? 'text' : 'password';
+                password2.setAttribute('type', type);
+                this.querySelector('i').classList.toggle('fa-eye');
+                this.querySelector('i').classList.toggle('fa-eye-slash');
+            });
+
+            // Password strength checker
+            function checkPasswordStrength(password) {
+                let strength = 0;
+                const checks = {
+                    length: password.length >= 8,
+                    uppercase: /[A-Z]/.test(password),
+                    lowercase: /[a-z]/.test(password),
+                    number: /[0-9]/.test(password)
+                };
+
+                // Update requirement icons
+                lengthCheck.innerHTML = `<i class="fas ${checks.length ? 'fa-check-circle text-success' : 'fa-circle text-muted'} me-1"></i> At least 8 characters`;
+                uppercaseCheck.innerHTML = `<i class="fas ${checks.uppercase ? 'fa-check-circle text-success' : 'fa-circle text-muted'} me-1"></i> At least one uppercase letter`;
+                lowercaseCheck.innerHTML = `<i class="fas ${checks.lowercase ? 'fa-check-circle text-success' : 'fa-circle text-muted'} me-1"></i> At least one lowercase letter`;
+                numberCheck.innerHTML = `<i class="fas ${checks.number ? 'fa-check-circle text-success' : 'fa-circle text-muted'} me-1"></i> At least one number`;
+
+                // Calculate strength
+                if (checks.length) strength += 1;
+                if (checks.uppercase) strength += 1;
+                if (checks.lowercase) strength += 1;
+                if (checks.number) strength += 1;
+                
+                // Bonus for longer passwords
+                if (password.length >= 12) strength += 1;
+
+                return { strength, checks };
+            }
+
+            // Password input event
+            password1.addEventListener('input', function() {
+                const password = this.value;
+                const result = checkPasswordStrength(password);
+                
+                // Update strength bar
+                if (password.length === 0) {
+                    strengthBar.className = 'password-strength';
+                    strengthText.innerHTML = '';
+                } else if (result.strength <= 2) {
+                    strengthBar.className = 'password-strength strength-weak';
+                    strengthText.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i>Weak password</span>';
+                } else if (result.strength === 3) {
+                    strengthBar.className = 'password-strength strength-fair';
+                    strengthText.innerHTML = '<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Fair password</span>';
+                } else if (result.strength === 4) {
+                    strengthBar.className = 'password-strength strength-good';
+                    strengthText.innerHTML = '<span class="text-info"><i class="fas fa-check-circle me-1"></i>Good password</span>';
+                } else {
+                    strengthBar.className = 'password-strength strength-strong';
+                    strengthText.innerHTML = '<span class="text-success"><i class="fas fa-shield-alt me-1"></i>Strong password</span>';
+                }
+                
+                checkPasswordMatch();
+                validateForm();
+            });
+
+            // Password match checker
+            function checkPasswordMatch() {
+                if (password2.value.length === 0) {
+                    matchMessage.innerHTML = '';
+                    matchMessage.className = 'password-match';
+                } else if (password1.value === password2.value) {
+                    matchMessage.innerHTML = '<i class="fas fa-check-circle me-1"></i>Passwords match';
+                    matchMessage.className = 'password-match match-success';
+                } else {
+                    matchMessage.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Passwords do not match';
+                    matchMessage.className = 'password-match match-error';
+                }
+            }
+
+            password2.addEventListener('input', checkPasswordMatch);
+
+            // Form validation
+            function validateForm() {
+                const passwordValid = password1.value.length >= 8;
+                const passwordsMatch = password1.value === password2.value;
+                const termsChecked = termsCheckbox.checked;
+                
+                if (!passwordValid || !passwordsMatch || !termsChecked) {
+                    submitBtn.disabled = true;
+                } else {
+                    submitBtn.disabled = false;
+                }
+            }
+
+            password1.addEventListener('input', validateForm);
+            password2.addEventListener('input', validateForm);
+            termsCheckbox.addEventListener('change', validateForm);
+
+            // Initial validation
+            validateForm();
+
+            // Form submission enhancement
+            const form = document.getElementById('signupForm');
+            form.addEventListener('submit', function(e) {
+                if (!termsCheckbox.checked) {
+                    e.preventDefault();
+                    alert('Please agree to the Terms of Service and Privacy Policy');
+                } else {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Account...';
+                }
+            });
+
+            // Auto-hide alerts after 5 seconds
+            setTimeout(() => {
+                document.querySelectorAll('.alert-dismissible').forEach(alert => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+        });
+    </script>
 </body>
 </html>
