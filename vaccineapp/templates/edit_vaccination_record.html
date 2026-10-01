@@ -66,8 +66,8 @@
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Status</label>
                         <select name="status" class="form-control">
-                            <option value="administered" {% if record.status == 'administered' %}selected{% endif %}>Administered</option>
-                            <option value="scheduled" {% if record.status == 'scheduled' %}selected{% endif %}>Scheduled</option>
+                            <option value="complete" {% if record.status == 'complete' %}selected{% endif %}>complete</option>
+                            <option value="incomplete" {% if record.status == 'incomplete' %}selected{% endif %}>incomplete</option>
                             <option value="missed" {% if record.status == 'missed' %}selected{% endif %}>Missed</option>
                         </select>
                     </div>

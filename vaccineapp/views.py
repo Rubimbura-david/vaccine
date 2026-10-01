@@ -3248,9 +3248,22 @@ def delete_patient(request, patient_id):
 
 @login_required
 def vaccination_schedule_management(request):
-    """Vaccination schedule management page for admins"""
-    # Check if user is admin/staff
-    if not request.user.is_staff and not request.user.is_superuser:
+    """Vaccination schedule management page for admins, doctors, and nurses"""
+    # Check if user has permission (admin, doctor, or nurse)
+    has_permission = False
+    
+    # Check if user is staff or superuser (admin)
+    if request.user.is_staff or request.user.is_superuser:
+        has_permission = True
+    else:
+        # Check user profile for doctor/nurse role
+        try:
+            if hasattr(request.user, 'userprofile') and request.user.userprofile.user_type in ['doctor', 'nurse']:
+                has_permission = True
+        except:
+            pass
+    
+    if not has_permission:
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('dashboard')
     
@@ -3326,7 +3339,21 @@ def vaccination_schedule_management(request):
 @login_required
 def delete_vaccination_schedule(request, schedule_id):
     """Delete a vaccination schedule"""
-    if not request.user.is_staff and not request.user.is_superuser:
+    # Check if user has permission (admin, doctor, or nurse)
+    has_permission = False
+    
+    # Check if user is staff or superuser (admin)
+    if request.user.is_staff or request.user.is_superuser:
+        has_permission = True
+    else:
+        # Check user profile for doctor/nurse role
+        try:
+            if hasattr(request.user, 'userprofile') and request.user.userprofile.user_type in ['doctor', 'nurse']:
+                has_permission = True
+        except:
+            pass
+    
+    if not has_permission:
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('dashboard')
     
@@ -3414,8 +3441,21 @@ def edit_vaccination_schedule(request, schedule_id):
     print(f"Method: {request.method}")
     print(f"{'='*50}\n")
     
-    # Check if user is admin/staff
-    if not request.user.is_staff and not request.user.is_superuser:
+    # Check if user has permission (admin, doctor, or nurse)
+    has_permission = False
+    
+    # Check if user is staff or superuser (admin)
+    if request.user.is_staff or request.user.is_superuser:
+        has_permission = True
+    else:
+        # Check user profile for doctor/nurse role
+        try:
+            if hasattr(request.user, 'userprofile') and request.user.userprofile.user_type in ['doctor', 'nurse']:
+                has_permission = True
+        except:
+            pass
+    
+    if not has_permission:
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('dashboard')
     
@@ -3471,8 +3511,21 @@ def edit_vaccination_schedule(request, schedule_id):
 @login_required
 def create_vaccination_schedule(request):
     """Create a new vaccination schedule (separate page)"""
-    # Check if user is admin/staff
-    if not request.user.is_staff and not request.user.is_superuser:
+    # Check if user has permission (admin, doctor, or nurse)
+    has_permission = False
+    
+    # Check if user is staff or superuser (admin)
+    if request.user.is_staff or request.user.is_superuser:
+        has_permission = True
+    else:
+        # Check user profile for doctor/nurse role
+        try:
+            if hasattr(request.user, 'userprofile') and request.user.userprofile.user_type in ['doctor', 'nurse']:
+                has_permission = True
+        except:
+            pass
+    
+    if not has_permission:
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('dashboard')
     

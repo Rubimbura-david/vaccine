@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - HealthCoach</title>
+    <title>Dashboard - VMS</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -126,7 +126,7 @@
         <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'index' %}">
                 <i class="fas fa-syringe me-2"></i>
-                HealthCoach <span class="brand-subtitle">Vaccine Dashboard</span>
+                VMS <span class="brand-subtitle">Vaccine Dashboard</span>
             </a>
             
             <div class="d-flex align-items-center">
@@ -255,15 +255,15 @@
         </li>
         {% endif %}
         
-        <!-- Vaccination Schedule - Visible to Admin only -->
-        {% if user_status == 'admin' %}
-        <li class="nav-item">
-            <a class="nav-link" href="#" data-page="schedule_management">
-                <i class="fas fa-calendar-check me-2"></i>
-                Vaccination Schedule
-            </a>
-        </li>
-        {% endif %}
+<!-- Vaccination Schedule - Visible to Admin, Doctors, and Nurses -->
+{% if user_status == 'admin' or user_status == 'doctor' or user_status == 'nurse' %}
+<li class="nav-item">
+    <a class="nav-link" href="#" data-page="schedule_management">
+        <i class="fas fa-calendar-check me-2"></i>
+        Vaccination Schedule
+    </a>
+</li>
+{% endif %}
         
         <!-- Vaccine Inventory - Visible to Admin, Doctors, Nurses -->
         {% if user_status == 'admin' or user_status == 'doctor' or user_status == 'nurse' %}
@@ -384,6 +384,13 @@
                 <a class="nav-link" href="#" data-page="medical_records">
                     <i class="fas fa-file-medical me-2"></i>
                     Medical Records
+                </a>
+            </li>
+
+                        <!-- monitoring status -->
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-page="#">
+                    my monitoring status
                 </a>
             </li>
         </ul>

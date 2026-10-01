@@ -108,11 +108,11 @@
 <body>
     <div class="certificate">
         <div class="seal">
-            <span>OFFICIAL<br>SEAL<br>HEALTHCOACH</span>
+            <span>OFFICIAL<br>SEAL<br>VMS</span>
         </div>
         
         <div class="header">
-            <h1>HealthCoach Medical System</h1>
+            <h1>VMS Medical System</h1>
             <h2>VACCINATION CERTIFICATE</h2>
             <p>Certificate of Immunization</p>
         </div>
@@ -146,11 +146,11 @@
                     </tr>
                     <tr>
                         <td>Administered By</td>
-                        <td>{{ record.administered_by|default:"HealthCoach Medical" }}</td>
+                        <td>{{ record.administered_by|default:"VMS Medical" }}</td>
                     </tr>
                     <tr>
                         <td>Facility</td>
-                        <td>{{ record.administering_facility|default:"HealthCoach Medical Center" }}</td>
+                        <td>{{ record.administering_facility|default:"VMS Medical Center" }}</td>
                     </tr>
                     <tr>
                         <td>Next Dose Due</td>
@@ -170,7 +170,7 @@
                 <div class="signature-line">
                     Authorized Signature
                 </div>
-                <p>Medical Director<br>HealthCoach Medical System</p>
+                <p>Medical Director<br>VMS Medical System</p>
             </div>
             
             <div class="signature">
@@ -190,7 +190,7 @@
         
         <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #999;">
             <p>Certificate ID: VAC-{{ record.id }}-{{ record.date_administered|date:"Ymd" }}</p>
-            <p>This is an official document of HealthCoach Medical System. Unauthorized use or reproduction is prohibited.</p>
+            <p>This is an official document of VMS Medical System. Unauthorized use or reproduction is prohibited.</p>
         </div>
     </div>
 </body>
