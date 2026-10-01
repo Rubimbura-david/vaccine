@@ -10,7 +10,7 @@ from .models import VaccinationSchedule
 # =============================================
 # YOUR COLLEAGUE'S ADDITIONAL MODEL IMPORTS
 # =============================================
-from .models import Appointment, Consultation, Prescription, Medication, MedicalRecord, VaccinationRecord
+from .models import Appointment, VaccinationRecord
 
 # =============================================
 # YOUR EXISTING FORMS - KEPT EXACTLY AS THEY WERE
@@ -41,12 +41,11 @@ class CustomUserCreationForm(UserCreationForm):
         })
     )
     
-    # ========== NEW STATUS FIELD ==========
+    # ========== USER STATUS FIELD ==========
+    # NOTE: 'admin' is intentionally hidden — admins are created only via Django admin panel.
     USER_STATUS_CHOICES = [
-        ('parent', '👪 Parent/Guardian'),
-        ('doctor', '👨‍⚕️ Doctor'),
-        ('nurse', '👩‍⚕️ Nurse'),
-        ('admin', '👑 Administrator'),
+        ('patient', '🧑 Patient'),
+        ('healthcare_worker', '👨‍⚕️ Healthcare Worker'),
     ]
     
     user_status = forms.ChoiceField(
@@ -100,38 +99,33 @@ class CustomUserCreationForm(UserCreationForm):
         user.email = self.cleaned_data['email']
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
-        
+
         # Get the selected user status
-        user_status = self.cleaned_data.get('user_status', 'parent')
-        
+        user_status = self.cleaned_data.get('user_status', 'patient')
+
+        # Stage the role on the instance BEFORE saving.
+        # The `create_user_profile` signal in models.py reads this attribute
+        # and creates the UserProfile with the CORRECT role in one shot.
+        user._pending_user_type = user_status
+
+        # Set Django permission flags BEFORE saving.
+        # No second .save() needed → no extra signal firing.
+        if user_status == 'admin':
+            user.is_staff = True
+            user.is_superuser = True
+        elif user_status == 'healthcare_worker':
+            user.is_staff = True
+
         if commit:
             user.save()
-            
-            # Create or update UserProfile with the user status
-            UserProfile.objects.update_or_create(
-                user=user,
-                defaults={'user_type': user_status}
-            )
-            
-            # Create a default patient record for parents
-            if user_status == 'parent':
-                Patient.objects.create(
-                    user=user,
-                    first_name=user.first_name,
-                    last_name=user.last_name,
-                    date_of_birth='2000-01-01',  # Default, can be updated later
-                    gender='U'
-                )
-            
-            # Set appropriate permissions based on user status
-            if user_status == 'admin':
-                user.is_staff = True
-                user.is_superuser = True
-                user.save()
-            elif user_status in ['doctor', 'nurse']:
-                user.is_staff = True
-                user.save()
-        
+            # `create_user_profile` signal runs here:
+            #   - reads _pending_user_type
+            #   - creates UserProfile with correct role
+            #   - `sync_patient_on_profile_save` runs afterward:
+            #       * patient          → creates Patient record ✅
+            #       * healthcare_worker → no Patient record ✅
+            #       * admin             → no Patient record ✅
+
         return user
 
 
@@ -592,73 +586,6 @@ class AppointmentForm(forms.ModelForm):
         }
 
 
-class ConsultationForm(forms.ModelForm):
-    class Meta:
-        model = Consultation
-        fields = ['patient', 'doctor', 'symptoms', 'description', 'diagnosis', 'recommendations', 'follow_up_date']
-        widgets = {
-            'symptoms': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
-            'diagnosis': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
-            'recommendations': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
-            'follow_up_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'patient': forms.Select(attrs={'class': 'form-control'}),
-            'doctor': forms.Select(attrs={'class': 'form-control'}),
-        }
-
-
-class PrescriptionForm(forms.ModelForm):
-    class Meta:
-        model = Prescription
-        fields = ['patient', 'doctor', 'diagnosis', 'symptoms', 'medical_advice', 'follow_up', 'pharmacy_notes']
-        widgets = {
-            'diagnosis': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
-            'symptoms': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
-            'medical_advice': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
-            'follow_up': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
-            'pharmacy_notes': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
-            'patient': forms.Select(attrs={'class': 'form-control'}),
-            'doctor': forms.Select(attrs={'class': 'form-control'}),
-        }
-
-
-class MedicationForm(forms.ModelForm):
-    class Meta:
-        model = Medication
-        fields = ['name', 'dosage', 'frequency', 'duration', 'instructions', 'purpose']
-        widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'dosage': forms.TextInput(attrs={'class': 'form-control'}),
-            'frequency': forms.TextInput(attrs={'class': 'form-control'}),
-            'duration': forms.TextInput(attrs={'class': 'form-control'}),
-            'instructions': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
-            'purpose': forms.TextInput(attrs={'class': 'form-control'}),
-        }
-
-
-class MedicalRecordForm(forms.ModelForm):
-    class Meta:
-        model = MedicalRecord
-        fields = ['patient', 'full_name', 'date_of_birth', 'age', 'gender', 'blood_type', 
-                 'allergies', 'emergency_contact', 'address', 'phone', 'email', 
-                 'insurance_number', 'primary_physician']
-        widgets = {
-            'full_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'date_of_birth': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'age': forms.TextInput(attrs={'class': 'form-control'}),
-            'gender': forms.Select(attrs={'class': 'form-control'}),
-            'blood_type': forms.Select(attrs={'class': 'form-control'}),
-            'allergies': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
-            'emergency_contact': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
-            'address': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'insurance_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'primary_physician': forms.TextInput(attrs={'class': 'form-control'}),
-            'patient': forms.Select(attrs={'class': 'form-control'}),
-        }
-
-
 class VaccinationRecordForm(forms.ModelForm):
     class Meta:
         model = VaccinationRecord
@@ -720,4 +647,46 @@ class VaccinationScheduleForm(forms.ModelForm):
         help_texts = {
             'target_age_groups': 'Comma-separated list of age groups (leave blank if for all)',
             'max_capacity': 'Set to 0 for unlimited capacity',
+        }
+
+
+# =============================================
+# VAXGUARD FORMS
+# =============================================
+
+from .models import MonitoringSession, VaccinationRecord
+
+
+class MonitoringSessionForm(forms.ModelForm):
+    """
+    Form used by healthcare workers to start a post-vaccination
+    monitoring session for a specific vaccination record.
+    """
+
+    DURATION_CHOICES = [
+        (15, '15 minutes'),
+        (30, '30 minutes (default)'),
+        (45, '45 minutes'),
+        (60, '60 minutes'),
+    ]
+
+    planned_duration_minutes = forms.ChoiceField(
+        choices=DURATION_CHOICES,
+        initial=30,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Monitoring duration',
+    )
+
+    class Meta:
+        model = MonitoringSession
+        fields = ['planned_duration_minutes', 'notes']
+        widgets = {
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Optional notes about this session...'
+            }),
+        }
+        labels = {
+            'notes': 'Notes (optional)',
         }

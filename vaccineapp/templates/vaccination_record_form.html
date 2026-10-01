@@ -32,7 +32,7 @@
                         <!-- Patient Selection -->
                         <div class="mb-3">
                             <label class="form-label">Patient <span class="text-danger">*</span></label>
-                            <select class="form-select" name="patient_id" required>
+                            <select class="form-select" name="patient_id" id="patientSelect" required>
                                 <option value="">Select Patient</option>
                                 {% for patient in patients %}
                                 <option value="{{ patient.id }}">{{ patient.full_name }} (ID: {{ patient.id }})</option>
@@ -43,12 +43,26 @@
                         <!-- Vaccine Selection -->
                         <div class="mb-3">
                             <label class="form-label">Vaccine <span class="text-danger">*</span></label>
-                            <select class="form-select" name="vaccine_id" required>
+                            <select class="form-select" name="vaccine_id" id="vaccineSelect" required>
                                 <option value="">Select Vaccine</option>
                                 {% for vaccine in vaccines %}
                                 <option value="{{ vaccine.id }}">{{ vaccine.name }}</option>
                                 {% endfor %}
                             </select>
+                        </div>
+
+                        <!-- VaxGuard: Series & Stock Info Panel -->
+                        <div id="vaccine-status-panel" class="alert alert-info" style="display:none;">
+                            <h6 class="fw-bold mb-2">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Series Status
+                            </h6>
+                            <div id="vaccine-status-content"></div>
+                        </div>
+
+                        <!-- VaxGuard: Warning Panel -->
+                        <div id="vaccine-status-warning" class="alert alert-warning" style="display:none;">
+                            <div id="vaccine-status-warning-content"></div>
                         </div>
                         
                         <!-- Dose Information -->
@@ -133,4 +147,89 @@
         </div>
     </div>
 </div>
+<script>
+(function() {
+    function getCookie(name) {
+        let v = null;
+        if (document.cookie) {
+            document.cookie.split(';').forEach(c => {
+                c = c.trim();
+                if (c.startsWith(name + '=')) v = decodeURIComponent(c.substring(name.length + 1));
+            });
+        }
+        return v;
+    }
+
+    async function fetchStatus() {
+        const patientId = document.getElementById('patientSelect').value;
+        const vaccineId = document.getElementById('vaccineSelect').value;
+        const panel = document.getElementById('vaccine-status-panel');
+        const content = document.getElementById('vaccine-status-content');
+        const warnPanel = document.getElementById('vaccine-status-warning');
+        const warnContent = document.getElementById('vaccine-status-warning-content');
+
+        // Hide panels until both are selected
+        if (!patientId || !vaccineId) {
+            panel.style.display = 'none';
+            warnPanel.style.display = 'none';
+            return;
+        }
+
+        try {
+            const resp = await fetch(`/api/patient-vaccine-status/${patientId}/${vaccineId}/`, {
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                credentials: 'same-origin',
+            });
+            if (!resp.ok) throw new Error('Failed to fetch');
+            const data = await resp.json();
+
+            // Build info lines
+            const lines = [
+                `Requires <strong>${data.requires_total}</strong> dose(s) in total`,
+                `Already received: <strong>${data.already_received}</strong>`,
+                `This will be <strong>Dose ${data.next_dose_number} of ${data.requires_total}</strong>`,
+            ];
+            if (data.last_date) lines.push(`Last administered: <strong>${data.last_date}</strong>`);
+            if (data.stock_available !== null && data.stock_available !== undefined) {
+                lines.push(`Stock available: <strong>${data.stock_available}</strong> dose(s)`);
+            }
+
+            content.innerHTML = lines.map(l => `<div>• ${l}</div>`).join('');
+            panel.style.display = 'block';
+
+            // Warnings
+            if (data.is_complete) {
+                warnContent.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i><strong>Series already complete.</strong> ${data.message} Proceeding will add an extra dose.`;
+                warnPanel.style.display = 'block';
+            } else if (data.stock_out) {
+                warnContent.innerHTML = `<i class="fas fa-times-circle me-1"></i><strong>Out of stock.</strong> This vaccine is not available in inventory.`;
+                warnPanel.style.display = 'block';
+            } else if (data.stock_low) {
+                warnContent.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i><strong>Low stock.</strong> Only ${data.stock_available} dose(s) remaining.`;
+                warnPanel.style.display = 'block';
+            } else {
+                warnPanel.style.display = 'none';
+            }
+
+            // Auto-fill dose_number and total_doses
+            const doseField = document.querySelector('input[name="dose_number"]');
+            const totalField = document.querySelector('input[name="total_doses"]');
+            if (doseField) doseField.value = data.next_dose_number;
+            if (totalField) totalField.value = data.requires_total;
+        } catch (err) {
+            console.error('VaxGuard status fetch failed:', err);
+            panel.style.display = 'none';
+            warnPanel.style.display = 'none';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const patientSelect = document.getElementById('patientSelect');
+        const vaccineSelect = document.getElementById('vaccineSelect');
+        if (patientSelect) patientSelect.addEventListener('change', fetchStatus);
+        if (vaccineSelect) vaccineSelect.addEventListener('change', fetchStatus);
+    });
+})();
+</script>
+
 {% endblock %}
