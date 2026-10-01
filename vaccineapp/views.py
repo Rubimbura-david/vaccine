@@ -33,15 +33,18 @@ import os
 # YOUR EXISTING IMPORTS - KEPT EXACTLY AS THEY WERE
 # =============================================
 from .forms import CustomUserCreationForm, VaccineInventoryForm
-from .models import UserProfile, Patient, Vaccine, VaccinationRecord, Appointment, VaccineInventory, Recommendation
+from .models import (
+    UserProfile, Patient, Vaccine, VaccinationRecord,
+    Appointment, VaccineInventory, Recommendation,
+    MonitoringSession, SensorReading, SymptomReport, Symptom,
+    RiskAssessment, Alert, ClinicalResponse, Outcome,
+)
+from .forms import RecommendationForm
+from .forms import CustomUserCreationForm, VaccineInventoryForm
 from .forms import RecommendationForm
 
-# =============================================
-# YOUR COLLEAGUE'S ADDITIONAL IMPORTS - ADDED BELOW
-# =============================================
-from .forms import AppointmentForm, ConsultationForm, PrescriptionForm, MedicationForm, MedicalRecordForm, VaccinationRecordForm
-from .models import Consultation, Prescription, Medication, MedicalRecord, Doctor, Department
-
+# Additional forms (VaxGuard keeps only these)
+from .forms import AppointmentForm, VaccinationRecordForm
 # =============================================
 # LOGGING CONFIGURATION
 # =============================================
@@ -480,12 +483,13 @@ def dashboard(request):
         # ============ PATIENT DATA FOR THE TABLE ============
         print("\n--- Fetching patients list ---")
         try:
-            if user.is_staff or user.is_superuser:
-                print("Admin user - fetching all patients")
-                patients_list = Patient.objects.all().select_related('user').prefetch_related('vaccination_records').order_by('-created_at')[:10]
+            profile = getattr(user, 'userprofile', None)
+            if profile and profile.user_type in ('healthcare_worker', 'admin'):
+                print("HCW/Admin - fetching all patients")
+                patients_list = Patient.objects.all().select_related('user').prefetch_related('vaccination_records').order_by('-created_at')[:50]
             else:
-                print("Regular user - fetching their patients")
-                patients_list = Patient.objects.filter(user=user).select_related('user').prefetch_related('vaccination_records').order_by('-created_at')[:10]
+                print("Patient - fetching only their own record")
+                patients_list = Patient.objects.filter(user=user).select_related('user').prefetch_related('vaccination_records').order_by('-created_at')[:50]
             print(f"Found {len(patients_list)} patients")
         except Exception as e:
             print(f"ERROR fetching patients list: {e}")
@@ -990,6 +994,8 @@ def vaccine_inventory(request):
 @login_required(login_url='/login/')
 def create_vaccine_api(request):
     """API endpoint to create new vaccine from frontend form"""
+    from datetime import datetime as dt
+
     try:
         data = json.loads(request.body)
         
@@ -999,6 +1005,18 @@ def create_vaccine_api(request):
             age_groups_str = ','.join(age_groups)
         else:
             age_groups_str = age_groups
+
+        # Convert date string to date object
+        expiry_date_str = data.get('expiryDate')
+        expiry_date = None
+        if expiry_date_str:
+            try:
+                expiry_date = dt.strptime(expiry_date_str, '%Y-%m-%d').date()
+            except (ValueError, TypeError):
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Invalid expiry date format: {expiry_date_str}. Use YYYY-MM-DD.'
+                }, status=400)
         
         # Create Vaccine if it doesn't exist
         vaccine_name = data.get('vaccineName')
@@ -1019,7 +1037,7 @@ def create_vaccine_api(request):
                 description=data.get('description'),
                 target_diseases=data.get('targetDiseases'),
                 age_groups=age_groups_str,
-                doses_required=1,
+                 doses_required=int(data.get('totalDosesRequired', 1)) or 1,
                 is_active=True
             )
         
@@ -1033,7 +1051,7 @@ def create_vaccine_api(request):
             current_stock=int(data.get('quantity', 0)),
             min_stock_level=int(data.get('minStock', 10)),
             doses_per_vial=int(data.get('dosesPerVial', 1)),
-            expiration_date=data.get('expiryDate'),
+            expiration_date=expiry_date,
             storage_temperature=data.get('storageTemp'),
             description=data.get('description'),
             target_diseases=data.get('targetDiseases'),
@@ -1137,7 +1155,8 @@ def vaccine_detail_api(request, vaccine_id):
         
         data = {
             'id': vaccine.id,
-            'name': vaccine.get_display_name(),
+            'name': vaccine.get_display_name(),    
+            'doses_required': vaccine.vaccine.doses_required if vaccine.vaccine else 1,
             'vaccine_type': vaccine.vaccine.vaccine_type if vaccine.vaccine else vaccine.vaccine_type,
             'vaccine_type_display': vaccine.vaccine.get_vaccine_type_display() if vaccine.vaccine else vaccine.get_vaccine_type_display(),
             'manufacturer': vaccine.vaccine.manufacturer if vaccine.vaccine and vaccine.vaccine.manufacturer else vaccine.manufacturer or 'Not specified',
@@ -1165,55 +1184,96 @@ def vaccine_detail_api(request, vaccine_id):
 @login_required(login_url='/login/')
 def delete_vaccine_api(request, vaccine_id):
     """API endpoint to delete a vaccine"""
+    import traceback
+
+    # Guard: reject invalid IDs early
+    if not vaccine_id or vaccine_id == 'null':
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid vaccine ID. The delete request did not include a valid vaccine.'
+        }, status=400)
+
     try:
         vaccine = VaccineInventory.objects.get(id=vaccine_id)
         vaccine_name = vaccine.get_display_name()
         vaccine.delete()
-        
+
         return JsonResponse({
             'success': True,
             'message': f'Vaccine {vaccine_name} deleted successfully'
         })
-        
+
     except VaccineInventory.DoesNotExist:
-        return JsonResponse({'error': 'Vaccine not found'}, status=404)
+        return JsonResponse({
+            'success': False,
+            'message': 'Vaccine not found'
+        }, status=404)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        print("DELETE VACCINE ERROR:", e)
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=500)
 
 @require_http_methods(["POST"])
 @csrf_exempt
 @login_required(login_url='/login/')
 def update_vaccine_api(request, vaccine_id):
     """API endpoint to update a vaccine"""
+    from datetime import datetime as dt
+    import traceback
+
     try:
         vaccine = VaccineInventory.objects.get(id=vaccine_id)
         data = json.loads(request.body)
-        
-        # Update fields
-        if 'current_stock' in data:
+
+        # Update simple fields
+        if 'current_stock' in data and data['current_stock'] not in (None, ''):
             vaccine.current_stock = int(data['current_stock'])
-        if 'min_stock_level' in data:
+        if 'min_stock_level' in data and data['min_stock_level'] not in (None, ''):
             vaccine.min_stock_level = int(data['min_stock_level'])
-        if 'expiration_date' in data:
-            vaccine.expiration_date = data['expiration_date']
+        # Total doses required lives on the Vaccine model, not the Inventory row
+        if 'doses_required' in data and data['doses_required'] not in (None, ''):
+            if vaccine.vaccine:
+                vaccine.vaccine.doses_required = int(data['doses_required']) or 1
+                vaccine.vaccine.save()
         if 'storage_temperature' in data:
             vaccine.storage_temperature = data['storage_temperature']
         if 'description' in data:
             vaccine.description = data['description']
         if 'lot_number' in data:
             vaccine.lot_number = data['lot_number']
-        
+        if 'manufacturer' in data:
+            vaccine.manufacturer = data['manufacturer']
+        if 'target_diseases' in data:
+            vaccine.target_diseases = data['target_diseases']
+
+        # Convert expiration_date string → date object
+        if 'expiration_date' in data and data['expiration_date']:
+            try:
+                vaccine.expiration_date = dt.strptime(
+                    data['expiration_date'], '%Y-%m-%d'
+                ).date()
+            except (ValueError, TypeError):
+                return JsonResponse({
+                    'success': False,
+                    'message': f"Invalid expiry date: {data['expiration_date']}"
+                }, status=400)
+
         vaccine.save()
-        
+
         return JsonResponse({
             'success': True,
             'message': f'Vaccine {vaccine.get_display_name()} updated successfully'
         })
-        
+
     except VaccineInventory.DoesNotExist:
-        return JsonResponse({'error': 'Vaccine not found'}, status=404)
+        return JsonResponse({'success': False, 'message': 'Vaccine not found'}, status=404)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        print("UPDATE VACCINE ERROR:", e)
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 # =============================================
 # YOUR EXISTING PATIENT MANAGEMENT
@@ -1222,13 +1282,20 @@ def update_vaccine_api(request, vaccine_id):
 @login_required(login_url='/login/')
 @no_cache_after_logout
 def patient_list(request):
-    """List all patients for the current user"""
-    patients = Patient.objects.filter(user=request.user).select_related('user')
-    
-    # Calculate statistics
+    """List patients — HCW/Admin see all; patients see only their own."""
+    profile = getattr(request.user, 'userprofile', None)
+
+    if profile and profile.user_type in ('healthcare_worker', 'admin'):
+        patients = Patient.objects.all().select_related('user')
+    else:
+        patients = Patient.objects.filter(user=request.user).select_related('user')
+
     total_patients = patients.count()
-    patients_with_complete_vaccinations = sum(1 for patient in patients if patient.vaccination_records.filter(status='administered').exists())
-    
+    patients_with_complete_vaccinations = sum(
+        1 for patient in patients
+        if patient.vaccination_records.filter(status='administered').exists()
+    )
+
     context = {
         'patients': patients,
         'total_patients': total_patients,
@@ -2986,7 +3053,7 @@ def create_vaccination_record(request):
     if not request.user.is_staff and not request.user.is_superuser:
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('vaccination_history')
-    
+
     if request.method == 'POST':
         form = VaccinationRecordForm(request.POST)
         if form.is_valid():
@@ -2997,9 +3064,8 @@ def create_vaccination_record(request):
             messages.error(request, 'Please correct the errors below.')
     else:
         form = VaccinationRecordForm()
-    
-    return render(request, 'create_vaccination_record.html', {'form': form})
 
+    return render(request, 'create_vaccination_record.html', {'form': form})
 
 @login_required(login_url='/login/')
 def vaccination_record_management(request):
@@ -4074,3 +4140,166 @@ def change_language(request):
         return redirect(request.META.get('HTTP_REFERER', 'settings'))
     
     return redirect('settings')
+
+
+# =============================================
+# VAXGUARD — PHASE 3a — MONITORING SESSIONS
+# =============================================
+
+from .forms import MonitoringSessionForm
+
+
+@login_required(login_url='/login/')
+def start_monitoring(request, vaccination_id):
+    """
+    Start a post-vaccination monitoring session.
+    Only healthcare workers and admins can start sessions.
+    """
+    # Role gate
+    profile = getattr(request.user, 'userprofile', None)
+    if profile is None or profile.user_type not in ('healthcare_worker', 'admin'):
+        messages.error(request, 'You do not have permission to start monitoring sessions.')
+        return redirect('dashboard')
+
+    vaccination = get_object_or_404(VaccinationRecord, id=vaccination_id)
+    patient = vaccination.patient
+
+    # Guard: don't allow two active sessions for the same vaccination
+    existing = MonitoringSession.objects.filter(
+        vaccination_record=vaccination,
+        status='active',
+    ).first()
+    if existing:
+        messages.info(request, 'A monitoring session is already active for this vaccination.')
+        return redirect('monitoring_live', session_id=existing.id)
+
+    if request.method == 'POST':
+        form = MonitoringSessionForm(request.POST)
+        if form.is_valid():
+            session = form.save(commit=False)
+            session.vaccination_record = vaccination
+            session.patient = patient
+            session.started_by = request.user
+            session.status = 'active'
+            session.current_level = 'green'
+            session.save()
+
+            messages.success(
+                request,
+                f'Monitoring session started for {patient.full_name()}. '
+                f'Duration: {session.planned_duration_minutes} minutes.'
+            )
+            return redirect('monitoring_live', session_id=session.id)
+    else:
+        default_duration = getattr(vaccination.vaccine, 'monitoring_duration_minutes', 30) or 30
+        form = MonitoringSessionForm(initial={
+            'planned_duration_minutes': default_duration,
+        })
+
+    context = {
+        'form': form,
+        'vaccination': vaccination,
+        'patient': patient,
+        'user_status': profile.user_type,
+    }
+    return render(request, 'start_monitoring.html', context)
+
+
+@login_required(login_url='/login/')
+def monitoring_live(request, session_id):
+    """
+    Live monitoring view for a session.
+    Phase 3b will add real-time streaming; for now shows current state.
+    """
+    session = get_object_or_404(MonitoringSession, id=session_id)
+
+    # Role gate
+    profile = getattr(request.user, 'userprofile', None)
+    is_staff_role = profile and profile.user_type in ('healthcare_worker', 'admin')
+    is_own_patient = (
+        profile and profile.user_type == 'patient'
+        and session.patient.user_id == request.user.id
+    )
+    if not (is_staff_role or is_own_patient):
+        messages.error(request, 'You do not have permission to view this session.')
+        return redirect('dashboard')
+
+    latest_readings = session.sensor_readings.order_by('-recorded_at')[:20]
+    recent_symptoms = session.symptom_reports.select_related('symptom').order_by('-reported_at')[:10]
+    latest_assessment = session.risk_assessments.order_by('-assessed_at').first()
+    open_alerts = session.alerts.exclude(status='resolved').order_by('-created_at')
+
+    context = {
+        'session': session,
+        'patient': session.patient,
+        'vaccination': session.vaccination_record,
+        'latest_readings': latest_readings,
+        'recent_symptoms': recent_symptoms,
+        'latest_assessment': latest_assessment,
+        'open_alerts': open_alerts,
+        'user_status': profile.user_type if profile else 'patient',
+    }
+    return render(request, 'monitoring_live.html', context)
+
+
+# =============================================
+# VAXGUARD — PATIENT + VACCINE STATUS API
+# =============================================
+
+@login_required(login_url='/login/')
+def patient_vaccine_status_api(request, patient_id, vaccine_id):
+    """
+    Returns dosing status for a patient + vaccine combination.
+    Called by the New Vaccination Record form to auto-populate.
+    """
+    from .models import VaccineInventory
+
+    patient = get_object_or_404(Patient, id=patient_id)
+    vaccine = get_object_or_404(Vaccine, id=vaccine_id)
+
+    requires_total = vaccine.doses_required or 1
+
+    previous = VaccinationRecord.objects.filter(
+        patient=patient,
+        vaccine=vaccine,
+        status='administered',
+    ).order_by('-dose_number')
+
+    already_received = previous.count()
+    next_dose_number = already_received + 1
+    is_complete = already_received >= requires_total
+    last_record = previous.first()
+    last_date = last_record.date_administered.isoformat() if last_record and last_record.date_administered else None
+
+    inventory = VaccineInventory.objects.filter(vaccine=vaccine).first()
+    stock_available = inventory.current_stock if inventory else None
+    min_stock = inventory.min_stock_level if inventory else None
+    stock_low = (
+        stock_available is not None
+        and min_stock is not None
+        and stock_available <= min_stock
+    )
+    stock_out = (stock_available == 0) if stock_available is not None else False
+
+    if is_complete:
+        message = (
+            f"{patient.full_name()} has already received all "
+            f"{requires_total} dose(s) of {vaccine.name}."
+        )
+    else:
+        message = f"This will be dose {next_dose_number} of {requires_total}."
+
+    return JsonResponse({
+        'requires_total': requires_total,
+        'already_received': already_received,
+        'next_dose_number': next_dose_number,
+        'is_complete': is_complete,
+        'last_date': last_date,
+        'stock_available': stock_available,
+        'min_stock': min_stock,
+        'stock_low': stock_low,
+        'stock_out': stock_out,
+        'message': message,
+        'patient_name': patient.full_name(),
+        'vaccine_name': vaccine.name,
+    })

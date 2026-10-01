@@ -569,3 +569,128 @@ class NotificationAdmin(admin.ModelAdmin):
             'fields': ('created_by', 'created_at')
         }),
     )
+# =============================================
+# VAXGUARD ADMIN REGISTRATIONS
+# =============================================
+from .models import (
+    Symptom,
+    MonitoringSession,
+    SensorReading,
+    SymptomReport,
+    RiskAssessment,
+    Alert,
+    ClinicalResponse,
+    Outcome,
+)
+
+
+@admin.register(Symptom)
+class SymptomAdmin(admin.ModelAdmin):
+    list_display = ['name', 'severity_level', 'is_active', 'created_at']
+    list_filter = ['severity_level', 'is_active']
+    search_fields = ['name', 'description']
+    ordering = ['severity_level', 'name']
+
+
+@admin.register(MonitoringSession)
+class MonitoringSessionAdmin(admin.ModelAdmin):
+    list_display = [
+        'id', 'patient', 'vaccination_record', 'start_time',
+        'planned_duration_minutes', 'current_level', 'status', 'started_by'
+    ]
+    list_filter = ['status', 'current_level', 'start_time']
+    search_fields = ['patient__first_name', 'patient__last_name']
+    readonly_fields = ['created_at', 'updated_at', 'elapsed_minutes']
+    date_hierarchy = 'start_time'
+
+    fieldsets = (
+        ('Core', {
+            'fields': ('vaccination_record', 'patient', 'started_by')
+        }),
+        ('Timing', {
+            'fields': ('start_time', 'planned_duration_minutes', 'end_time')
+        }),
+        ('Status', {
+            'fields': ('status', 'current_level')
+        }),
+        ('Notes', {
+            'fields': ('notes',)
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at', 'elapsed_minutes')
+        }),
+    )
+
+
+@admin.register(SensorReading)
+class SensorReadingAdmin(admin.ModelAdmin):
+    list_display = [
+        'id', 'session', 'device_id', 'heart_rate',
+        'spo2', 'temperature', 'recorded_at'
+    ]
+    list_filter = ['device_id', 'recorded_at']
+    search_fields = ['device_id', 'session__id']
+    date_hierarchy = 'recorded_at'
+
+
+@admin.register(SymptomReport)
+class SymptomReportAdmin(admin.ModelAdmin):
+    list_display = [
+        'id', 'session', 'symptom', 'reported_by_type',
+        'reported_by', 'reported_at'
+    ]
+    list_filter = ['reported_by_type', 'reported_at']
+    search_fields = ['symptom__name', 'session__id']
+    date_hierarchy = 'reported_at'
+
+
+@admin.register(RiskAssessment)
+class RiskAssessmentAdmin(admin.ModelAdmin):
+    list_display = ['id', 'session', 'level', 'assessed_at']
+    list_filter = ['level', 'assessed_at']
+    search_fields = ['session__id', 'reason']
+    date_hierarchy = 'assessed_at'
+    readonly_fields = ['assessed_at']
+
+
+@admin.register(Alert)
+class AlertAdmin(admin.ModelAdmin):
+    list_display = [
+        'id', 'session', 'level', 'status',
+        'created_at', 'acknowledged_at', 'acknowledged_by'
+    ]
+    list_filter = ['level', 'status', 'created_at']
+    search_fields = ['session__id', 'reason']
+    date_hierarchy = 'created_at'
+    readonly_fields = ['created_at', 'acknowledgement_seconds']
+
+    fieldsets = (
+        ('Core', {
+            'fields': ('session', 'level', 'status')
+        }),
+        ('Trigger', {
+            'fields': ('reason', 'risk_assessment')
+        }),
+        ('Timeline', {
+            'fields': ('created_at', 'acknowledged_at', 'acknowledged_by', 'resolved_at')
+        }),
+    )
+
+
+@admin.register(ClinicalResponse)
+class ClinicalResponseAdmin(admin.ModelAdmin):
+    list_display = ['id', 'alert', 'responded_by', 'responded_at', 'referral_facility']
+    list_filter = ['responded_at']
+    search_fields = ['alert__id', 'assessment_notes', 'action_taken']
+    date_hierarchy = 'responded_at'
+
+
+@admin.register(Outcome)
+class OutcomeAdmin(admin.ModelAdmin):
+    list_display = [
+        'id', 'session', 'outcome_type', 'follow_up_date',
+        'recorded_by', 'recorded_at'
+    ]
+    list_filter = ['outcome_type', 'recorded_at']
+    search_fields = ['session__id', 'notes']
+    date_hierarchy = 'recorded_at'

@@ -50,6 +50,8 @@ urlpatterns = [
     # =============================================
     # PATIENT MANAGEMENT
     # =============================================
+     path('monitoring/start/<int:vaccination_id>/', views.start_monitoring, name='start_monitoring'),
+    path('monitoring/<int:session_id>/', views.monitoring_live, name='monitoring_live'),
     path('patients/', views.patient_list, name='patient_list'),
     path('vaccination-schedule/', views.vaccination_schedule, name='vaccination_schedule'),
     path('immunization-records/', views.immunization_records, name='immunization_records'),
@@ -104,6 +106,11 @@ urlpatterns = [
     path('vaccination-records/create/', views.create_vaccination_record, name='create_vaccination_record'),
     path('vaccination-records/management/', views.vaccination_record_management, name='vaccination_record_management'),
     
+    # VaxGuard: patient + vaccine status API
+    path('api/patient-vaccine-status/<int:patient_id>/<int:vaccine_id>/',
+         views.patient_vaccine_status_api,
+         name='patient_vaccine_status_api'),
+
     # API URLs (unique)
     path('api/departments/', views.get_departments, name='get_departments'),
     path('api/doctors/', views.get_available_doctors, name='get_doctors'),

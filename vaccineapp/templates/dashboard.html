@@ -236,7 +236,7 @@
                <div class="position-sticky pt-3">
     <ul class="nav flex-column">
         <!-- Vaccine Dashboard - Visible to all staff (Admin, Doctor, Nurse) -->
-        {% if user_status == 'admin' or user_status == 'doctor' or user_status == 'nurse' %}
+        {% if user_status == 'admin' or user_status == 'healthcare_worker' %}
         <li class="nav-item">
             <a class="nav-link active" href="#" data-page="dashboard">
                 <i class="fas fa-tachometer-alt me-2"></i>
@@ -246,7 +246,7 @@
         {% endif %}
         
         <!-- Patients - Visible to Admin, Doctors, Nurses -->
-        {% if user_status == 'admin' or user_status == 'doctor' or user_status == 'nurse' %}
+        {% if user_status == 'admin' or user_status == 'healthcare_worker' %}
         <li class="nav-item">
             <a class="nav-link" href="#" data-page="patients">
                 <i class="fas fa-baby me-2"></i>
@@ -266,7 +266,7 @@
 {% endif %}
         
         <!-- Vaccine Inventory - Visible to Admin, Doctors, Nurses -->
-        {% if user_status == 'admin' or user_status == 'doctor' or user_status == 'nurse' %}
+        {% if user_status == 'admin' or user_status == 'healthcare_worker' %}
         <li class="nav-item">
             <a class="nav-link" href="#" data-page="inventory">
                 <i class="fas fa-syringe me-2"></i>
@@ -276,7 +276,7 @@
         {% endif %}
         
         <!-- Vaccination Records - Visible to Admin only -->
-        {% if user_status == 'admin' or user_status == 'doctor' or user_status == 'nurse' %}
+        {% if user_status == 'admin' or user_status == 'healthcare_worker' %}
         <li class="nav-item">
             <a class="nav-link" href="#" data-page="records">
                 <i class="fas fa-file-medical me-2"></i>
@@ -296,7 +296,7 @@
         {% endif %}
         
         <!-- Recommendations - Visible to Admin, Doctors, Nurses -->
-        {% if user_status == 'admin' or user_status == 'doctor' or user_status == 'nurse' %}
+        {% if user_status == 'admin' or user_status == 'healthcare_worker' %}
         <li class="nav-item">
             <a class="nav-link" href="#" data-page="recommendation">
                 <i class="fas fa-clipboard-list me-2"></i>
@@ -306,50 +306,8 @@
         {% endif %}
 
     </ul>
-{% if user_status == 'admin' %}
-    <h6 class="sidebar-heading d-flex align-items-center px-3 mb-3 text-muted">
-            <span>PATIENT PORTAL</span>
-        </h6>
-        {% endif %}
-
-{% if user_status == 'admin' %}
-<ul class="nav flex-column mb-4">
-            <!-- Symptom Checker -->
-            <li class="nav-item">
-                <a class="nav-link" href="#" data-page="consultation">
-                    <i class="fas fa-stethoscope me-2"></i>
-                    Symptom Checker
-                </a>
-            </li>
-            
-            <!-- My Appointments -->
-            <li class="nav-item">
-                <a class="nav-link" href="#" data-page="appointments">
-                    <i class="fas fa-calendar-check me-2"></i>
-                    Patient Feedback
-                </a>
-            </li>
-            <!-- Vaccination History -->
-            <li class="nav-item">
-                <a class="nav-link" href="#" data-page="vaccination_history">
-                    <i class="fas fa-syringe me-2"></i>
-                    Vaccination History
-                </a>
-            </li>
-            
-            <!-- Medical Records -->
-            <li class="nav-item">
-                <a class="nav-link" href="#" data-page="medical_records">
-                    <i class="fas fa-file-medical me-2"></i>
-                    Medical Records
-                </a>
-            </li>
-        </ul>
-
-{% endif %}
-
     <!-- PATIENT PORTAL SECTION - Visible ONLY to Parents/Patients -->
-    {% if user_status == 'parent' %}
+    {% if user_status == 'patient' %}
     <div class="patient-portal-section mt-4">
         <h6 class="sidebar-heading d-flex align-items-center px-3 mb-3 text-muted">
             <span>PATIENT PORTAL</span>
@@ -840,6 +798,25 @@
                             </td>
                             <td>
     <div class="btn-group btn-group-sm" role="group">
+        <!-- Start Monitoring Button (VaxGuard) -->
+        {% with last_record=patient.vaccination_records.last %}
+            {% if last_record and last_record.status == 'administered' %}
+                {% if last_record.monitoring_session %}
+                    {% if last_record.monitoring_session.status == 'active' %}
+                        <a href="{% url 'monitoring_live' last_record.monitoring_session.id %}" 
+                           class="btn btn-outline-info" title="View Active Monitoring">
+                            <i class="fas fa-heart-pulse"></i>
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'start_monitoring' last_record.id %}" 
+                       class="btn btn-success" title="Start Monitoring Session">
+                        <i class="fas fa-play"></i>
+                    </a>
+                {% endif %}
+            {% endif %}
+        {% endwith %}
+        
         <!-- View Button -->
         <a href="{% url 'patient_detail' patient.id %}" class="btn btn-outline-primary" title="View Patient">
             <i class="fas fa-eye"></i>
@@ -2446,29 +2423,14 @@
 </div>
 </div>
 
-<!-- Consultation Page -->
-<div id="consultation" class="page-content">
-    {% include 'consultation.html' %}
-</div>
-
 <!-- Appointments Page -->
 <div id="appointments" class="page-content">
     {% include 'appointments.html' %}
 </div>
 
-<!-- Prescriptions Page -->
-<div id="prescriptions" class="page-content">
-    {% include 'prescriptions.html' %}
-</div>
-
 <!-- Vaccination History Page -->
 <div id="vaccination_history" class="page-content">
     {% include 'vaccination_history.html' %}
-</div>
-
-<!-- Medical Records Page -->
-<div id="medical_records" class="page-content">
-    {% include 'medical_records.html' %}
 </div>
 
 <!-- Vaccination Schedule Management Page -->
@@ -2544,20 +2506,30 @@
                         </div>
                         
                         <div class="row">
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="quantity" class="form-label">Quantity <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="quantity" min="0" required>
-                                <div class="form-text">Current number of doses available</div>
+                                <div class="form-text">Doses available now</div>
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="minStock" class="form-label">Minimum Stock Level <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="minStock" min="1" required>
-                                <div class="form-text">Alert when stock falls below this level</div>
+                                <div class="form-text">Alert threshold</div>
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="dosesPerVial" class="form-label">Doses per Vial <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="dosesPerVial" min="1" value="1" required>
-                                <div class="form-text">Number of doses in each vial/container</div>
+                                <div class="form-text">Doses in each vial</div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="totalDosesRequired" class="form-label">
+                                    Total Doses Required
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" class="form-control" id="totalDosesRequired" min="1" value="1" required>
+                                <div class="form-text">
+                                    Doses in the <strong>series</strong> (e.g. 3 for MMR)
+                                </div>
                             </div>
                         </div>
                         
@@ -2765,19 +2737,23 @@
             navLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
-                    
+
+                    const pageId = this.getAttribute('data-page');
+
+                    // Save selected tab so it can be restored after redirects/reloads
+                    sessionStorage.setItem('vaxguard_last_tab', pageId);
+
                     // Remove active class from all links
                     navLinks.forEach(nav => nav.classList.remove('active'));
-                    
+
                     // Add active class to clicked link
                     this.classList.add('active');
-                    
+
                     // Hide all page content
                     const pages = document.querySelectorAll('.page-content');
                     pages.forEach(page => page.classList.remove('active'));
-                    
+
                     // Show selected page content
-                    const pageId = this.getAttribute('data-page');
                     document.getElementById(pageId).classList.add('active');
                 });
             });
@@ -2834,6 +2810,7 @@
                 quantity: parseInt(document.getElementById('quantity').value),
                 minStock: parseInt(document.getElementById('minStock').value),
                 dosesPerVial: parseInt(document.getElementById('dosesPerVial').value),
+                totalDosesRequired: parseInt(document.getElementById('totalDosesRequired').value) || 1,
                 expiryDate: document.getElementById('expiryDate').value,
                 storageTemp: document.getElementById('storageTemp').value,
                 description: document.getElementById('description').value,
@@ -2938,8 +2915,10 @@
 
 <script>
 // Vaccine Inventory JavaScript - Fixed for your Django backend
+let currentVaccineId = null;   // ← moved OUT of the closure to global scope
+
 document.addEventListener('DOMContentLoaded', function() {
-    let currentVaccineId = null;
+    // currentVaccineId is now in global scope
 
     // View Vaccine Details
     document.querySelectorAll('.view-vaccine, .view-vaccine-details').forEach(button => {
@@ -3108,6 +3087,14 @@ function displayVaccineDetails(vaccine) {
                         </td>
                     </tr>
                     <tr>
+                        <td><strong>Total Doses Required:</strong></td>
+                        <td>
+                            <span class="badge bg-info">
+                                ${vaccine.doses_required || 1} dose(s) in series
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
                         <td><strong>Administered:</strong></td>
                         <td>${vaccine.administered_count || 0} patients</td>
                     </tr>
@@ -3231,20 +3218,25 @@ function populateEditForm(vaccine) {
             </div>
             
             <div class="row">
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <label for="editCurrentStock" class="form-label">Current Stock *</label>
                     <input type="number" class="form-control" id="editCurrentStock" value="${vaccine.current_stock}" min="0" required>
-                    <div class="form-text">Current number of doses available</div>
+                    <div class="form-text">Doses available</div>
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <label for="editMinStock" class="form-label">Minimum Stock Level *</label>
                     <input type="number" class="form-control" id="editMinStock" value="${vaccine.minimum_stock || vaccine.min_stock_level || 10}" min="1" required>
-                    <div class="form-text">Alert when stock falls below this level</div>
+                    <div class="form-text">Alert threshold</div>
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <label for="editDosesPerVial" class="form-label">Doses per Vial *</label>
                     <input type="number" class="form-control" id="editDosesPerVial" value="${vaccine.doses_per_vial || 1}" min="1" required>
-                    <div class="form-text">Number of doses in each vial/container</div>
+                    <div class="form-text">Doses per vial</div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="editDosesRequired" class="form-label">Total Doses Required *</label>
+                    <input type="number" class="form-control" id="editDosesRequired" value="${vaccine.doses_required || 1}" min="1" required>
+                    <div class="form-text">Full series (e.g. 3)</div>
                 </div>
             </div>
             
@@ -3301,7 +3293,8 @@ function saveEditedVaccine() {
         lot_number: document.getElementById('editLotNumber').value,
         manufacturer: document.getElementById('editManufacturer').value,
         target_diseases: document.getElementById('editTargetDiseases').value,
-        doses_per_vial: parseInt(document.getElementById('editDosesPerVial').value)
+        doses_per_vial: parseInt(document.getElementById('editDosesPerVial').value),
+        doses_required: parseInt(document.getElementById('editDosesRequired').value) || 1
     };
 
     // Validate required fields
@@ -3647,55 +3640,58 @@ function getCookie(name) {
 }</script>
 
 <script>
-// Ensure recommendations page shows when filter is applied
-document.addEventListener('DOMContentLoaded', function() {
-    // Check if URL has filter parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const hasFilter = urlParams.has('filter');
-    
-    // If we have a filter, make sure recommendations page is active
-    if (hasFilter) {
-        // Hide all other pages
-        document.querySelectorAll('.page-content').forEach(page => {
-            page.classList.remove('active');
+// ============================================
+// VAXGUARD TAB RESTORE
+// Restores the correct dashboard tab based on:
+//   1. URL hash (#patients, #inventory, ...)
+//   2. sessionStorage (last tab visited)
+// This makes redirects like /dashboard/#patients work correctly.
+// ============================================
+(function() {
+    const validTabs = [
+        'dashboard', 'patients', 'schedule', 'schedule_management',
+        'inventory', 'records', 'analytics', 'recommendation',
+        'appointments', 'vaccination_history',
+    ];
+
+    function activateTab(pageId) {
+        document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+        const target = document.getElementById(pageId);
+        if (target) target.classList.add('active');
+
+        document.querySelectorAll('.nav-link[data-page]').forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('data-page') === pageId) {
+                link.classList.add('active');
+            }
         });
-        
-        // Show recommendations page - CHANGED from 'inventory' to 'recommendation'
-        const recommendationsPage = document.getElementById('recommendation');
-        if (recommendationsPage) {
-            recommendationsPage.classList.add('active');
+    }
+
+    function restoreTab() {
+        // Priority 1: URL hash
+        const hash = window.location.hash.replace('#', '');
+        if (hash && validTabs.includes(hash)) {
+            activateTab(hash);
+            return;
         }
-        
-        // Update sidebar active state - CHANGED from 'inventory' to 'recommendation'
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.classList.remove('active');
-            if (link.getAttribute('data-page') === 'recommendation') {
-                link.classList.add('active');
-            }
-        });
+        // Priority 2: sessionStorage
+        const lastTab = sessionStorage.getItem('vaxguard_last_tab');
+        if (lastTab && validTabs.includes(lastTab)) {
+            activateTab(lastTab);
+        }
     }
-    
-    // Also handle when page loads with #recommendation hash
-    if (window.location.hash === '#recommendation') {
-        document.querySelectorAll('.page-content').forEach(page => {
-            page.classList.remove('active');
-        });
-        document.getElementById('recommendation').classList.add('active');
-        
-        // Update sidebar
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.classList.remove('active');
-            if (link.getAttribute('data-page') === 'recommendation') {
-                link.classList.add('active');
-            }
-        });
+
+    // Run as soon as DOM is ready AND again on hashchange (for in-page nav)
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', restoreTab);
+    } else {
+        restoreTab();
     }
-    
-    // Debug: Log what's being displayed
-    console.log('Current filter:', urlParams.get('filter') || 'all');
-    console.log('Active page:', document.querySelector('.page-content.active')?.id);
-    console.log('Recommendations count:', {{ recommendations|length }});
-});
+    window.addEventListener('hashchange', restoreTab);
+
+    // Expose globally so other scripts can call it if needed
+    window.vaxguardActivateTab = activateTab;
+})();
 </script>
 
 <script>
