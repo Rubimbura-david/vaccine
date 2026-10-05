@@ -146,5 +146,6 @@ urlpatterns = [
     path('vaccination-record/<int:pk>/', view_vaccination_record, name='view_vaccination_record'),
     path('vaccination-record/<int:pk>/edit/', edit_vaccination_record, name='edit_vaccination_record'),
     path('vaccination-record/<int:pk>/delete/', delete_vaccination_record, name='delete_vaccination_record'),
+    path('consultation/report-symptom/', views.report_symptom, name='report_symptom'),
 
 ]

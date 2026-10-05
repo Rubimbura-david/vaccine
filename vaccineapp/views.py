@@ -45,6 +45,9 @@ from .forms import RecommendationForm
 
 # Additional forms (VaxGuard keeps only these)
 from .forms import AppointmentForm, VaccinationRecordForm
+from .models import UserProfile, Patient, Vaccine, VaccinationRecord, Appointment, VaccineInventory, Recommendation
+from .models import UserProfile
+
 # =============================================
 # LOGGING CONFIGURATION
 # =============================================
@@ -2253,46 +2256,45 @@ def appointments(request):
     """Appointments page - for patients only"""
     if request.user.is_staff or request.user.is_superuser:
         return redirect('dashboard')
-    
+
     try:
         patient = Patient.objects.get(user=request.user)
         today = datetime.now()
-        
+
         # Get all appointments for this patient
         all_appointments = Appointment.objects.filter(patient=patient).select_related(
             'assigned_doctor', 'assigned_doctor__user', 'vaccine'
         ).order_by('-scheduled_date')
-        
+
         # Statistics
         upcoming_count = all_appointments.filter(
-            scheduled_date__gte=today, 
+            scheduled_date__gte=today,
             status__in=['scheduled', 'confirmed']
         ).count()
         completed_count = all_appointments.filter(status='completed').count()
         pending_count = all_appointments.filter(status='scheduled').count()
         cancelled_count = all_appointments.filter(status='cancelled').count()
-        
+
         # Upcoming appointments (next 30 days)
         upcoming_appointments = all_appointments.filter(
             scheduled_date__gte=today,
             status__in=['scheduled', 'confirmed']
         ).order_by('scheduled_date')[:10]
-        
+
         # Appointment history (last 6 months)
         six_months_ago = today - timedelta(days=180)
         appointment_history = all_appointments.filter(
             scheduled_date__gte=six_months_ago
         ).exclude(status__in=['scheduled', 'confirmed']).order_by('-scheduled_date')[:20]
-        
-        # Available doctors for booking
-        available_doctors = Doctor.objects.filter(is_available=True).select_related('user', 'department')
-        
-        # Available departments
-        departments = Department.objects.filter(is_active=True)
-        
+
+        # Available doctors for booking (healthcare workers = "doctors" in VaxGuard)
+        available_doctors = UserProfile.objects.filter(
+            user_type='healthcare_worker'
+        ).select_related('user')
+
         # Available vaccines
         vaccines = Vaccine.objects.filter(is_active=True)
-        
+
         context = {
             'appointments': all_appointments,
             'upcoming_appointments': upcoming_appointments,
@@ -2304,11 +2306,10 @@ def appointments(request):
             'total_appointments': all_appointments.count(),
             'patient': patient,
             'available_doctors': available_doctors,
-            'departments': departments,
             'vaccines': vaccines,
             'current_date': today.strftime("%B %d, %Y"),
         }
-        
+
     except Patient.DoesNotExist:
         messages.warning(request, 'Please complete your patient profile to view appointments.')
         context = {
@@ -2324,7 +2325,7 @@ def appointments(request):
             'departments': [],
             'current_date': datetime.now().strftime("%B %d, %Y"),
         }
-    
+
     return render(request, 'appointments.html', context)
 
 
@@ -2415,33 +2416,70 @@ def cancel_appointment(request, appointment_id):
 
 @login_required(login_url='/login/')
 def consultation(request):
-    """Consultation page - for patients only"""
+    """Report Symptoms page — patients report post-vaccination symptoms
+    against their active monitoring session (VaxGuard)."""
+    # Staff/healthcare workers go to dashboard
     if request.user.is_staff or request.user.is_superuser:
         return redirect('dashboard')
     
+    # Make sure this is a patient
     try:
-        patient = Patient.objects.get(user=request.user)
+        user_profile = request.user.userprofile
+        if user_profile.user_type != 'patient':
+            return redirect('dashboard')
+    except Exception:
+        return redirect('dashboard')
+    
+    context = {
+        'patient': None,
+        'active_session': None,
+        'recent_vaccinations': [],
+        'available_symptoms': [],
+        'recent_reports': [],
+        'error_message': None,
+    }
+    
+    try:
+        # Get the patient record for this user
+        patient = Patient.objects.filter(user=request.user).first()
+        if not patient:
+            context['error_message'] = 'No patient profile found. Please contact support.'
+            return render(request, 'consultation.html', context)
         
-        # Get patient's consultations
-        consultations = Consultation.objects.filter(patient=patient).select_related(
-            'doctor', 'doctor__user'
-        ).order_by('-consultation_date')
+        context['patient'] = patient
         
-        # Get available doctors for new consultation
-        available_doctors = Doctor.objects.filter(is_available=True).select_related('user', 'department')[:5]
+        # Find the most recent active monitoring session
+        active_session = MonitoringSession.objects.filter(
+            patient=patient,
+            status='active'
+        ).select_related('vaccination_record__vaccine').order_by('-start_time').first()
         
-        context = {
-            'patient': patient,
-            'consultations': consultations,
-            'available_doctors': available_doctors,
-            'total_consultations': consultations.count(),
-        }
+        context['active_session'] = active_session
+        
+        # Recent vaccinations for the patient (so they can pick which vaccine
+        # they're reporting symptoms for if there's no active session)
+        recent_vaccinations = VaccinationRecord.objects.filter(
+            patient=patient,
+            status='administered'
+        ).select_related('vaccine').order_by('-date_administered')[:5]
+        context['recent_vaccinations'] = recent_vaccinations
+        
+        # Symptoms available to report
+        context['available_symptoms'] = Symptom.objects.filter(is_active=True)
+        
+        # Recent symptom reports for this patient
+        if active_session:
+            context['recent_reports'] = SymptomReport.objects.filter(
+                session=active_session
+            ).select_related('symptom').order_by('-reported_at')[:10]
+        
     except Patient.DoesNotExist:
-        context = {
-            'consultations': [],
-            'available_doctors': [],
-            'total_consultations': 0,
-        }
+        context['error_message'] = 'No patient profile found.'
+    except Exception as e:
+        import traceback
+        print(f"Error in consultation view: {e}")
+        print(traceback.format_exc())
+        context['error_message'] = 'An error occurred. Please try again.'
     
     return render(request, 'consultation.html', context)
 
@@ -4303,3 +4341,82 @@ def patient_vaccine_status_api(request, patient_id, vaccine_id):
         'patient_name': patient.full_name(),
         'vaccine_name': vaccine.name,
     })
+
+@login_required(login_url='/login/')
+def report_symptom(request):
+    """Handle symptom report submission from a patient."""
+    if request.method != 'POST':
+        return redirect('consultation')
+    
+    # Ensure patient
+    if request.user.is_staff or request.user.is_superuser:
+        return redirect('dashboard')
+    
+    try:
+        patient = Patient.objects.filter(user=request.user).first()
+        if not patient:
+            messages.error(request, 'Patient profile not found.')
+            return redirect('consultation')
+        
+        # Get selected symptom IDs
+        symptom_ids = request.POST.getlist('symptoms')
+        notes = request.POST.get('notes', '').strip()
+        session_id = request.POST.get('session_id')
+        vaccination_record_id = request.POST.get('vaccination_record_id')
+        
+        if not symptom_ids:
+            messages.error(request, 'Please select at least one symptom.')
+            return redirect('consultation')
+        
+        # Find the session
+        session = None
+        if session_id:
+            session = MonitoringSession.objects.filter(
+                id=session_id, patient=patient, status='active'
+            ).first()
+        elif vaccination_record_id:
+            # Get or create a session for the vaccination record
+            record = VaccinationRecord.objects.filter(
+                id=vaccination_record_id, patient=patient
+            ).first()
+            if record:
+                # Get existing active session or create one
+                session = MonitoringSession.objects.filter(
+                    vaccination_record=record, patient=patient, status='active'
+                ).first()
+                if not session:
+                    session = MonitoringSession.objects.create(
+                        vaccination_record=record,
+                        patient=patient,
+                        started_by=request.user,
+                        planned_duration_minutes=30,
+                    )
+        
+        if not session:
+            messages.error(request, 'Could not find a valid monitoring session.')
+            return redirect('consultation')
+        
+        # Create symptom reports
+        symptoms = Symptom.objects.filter(id__in=symptom_ids, is_active=True)
+        for symptom in symptoms:
+            SymptomReport.objects.create(
+                session=session,
+                symptom=symptom,
+                reported_by=request.user,
+                reported_by_type='patient',
+                notes=notes,
+            )
+        
+        messages.success(
+            request, 
+            f'✅ Successfully reported {symptoms.count()} symptom(s). '
+            f'A healthcare worker will review your report.'
+        )
+        
+    except Exception as e:
+        import traceback
+        print(f"Error reporting symptom: {e}")
+        print(traceback.format_exc())
+        messages.error(request, f'Error submitting report: {str(e)}')
+    
+    return redirect('consultation')
