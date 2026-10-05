@@ -52,6 +52,10 @@ urlpatterns = [
     # =============================================
      path('monitoring/start/<int:vaccination_id>/', views.start_monitoring, name='start_monitoring'),
     path('monitoring/<int:session_id>/', views.monitoring_live, name='monitoring_live'),
+    path('api/monitoring/<int:session_id>/latest/', views.monitoring_latest_api, name='monitoring_latest_api'),
+    path('api/monitoring/<int:session_id>/simulate/', views.monitoring_simulate_reading_api, name='monitoring_simulate_api'),
+    path('api/monitoring/<int:session_id>/report-symptom/', views.monitoring_report_symptom_api, name='monitoring_report_symptom_api'),
+    path('api/monitoring/<int:session_id>/end/', views.monitoring_end_session_api, name='monitoring_end_api'),
     path('patients/', views.patient_list, name='patient_list'),
     path('vaccination-schedule/', views.vaccination_schedule, name='vaccination_schedule'),
     path('immunization-records/', views.immunization_records, name='immunization_records'),

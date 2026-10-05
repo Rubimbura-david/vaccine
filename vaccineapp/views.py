@@ -4156,7 +4156,7 @@ def start_monitoring(request, vaccination_id):
 def monitoring_live(request, session_id):
     """
     Live monitoring view for a session.
-    Phase 3b will add real-time streaming; for now shows current state.
+    Shows sensor readings, symptoms, and status — updated live via AJAX.
     """
     session = get_object_or_404(MonitoringSession, id=session_id)
 
@@ -4184,7 +4184,9 @@ def monitoring_live(request, session_id):
         'recent_symptoms': recent_symptoms,
         'latest_assessment': latest_assessment,
         'open_alerts': open_alerts,
+        'all_symptoms': Symptom.objects.filter(is_active=True).order_by('severity_level', 'name'),
         'user_status': profile.user_type if profile else 'patient',
+        'is_hcw': is_staff_role,
     }
     return render(request, 'monitoring_live.html', context)
 
@@ -4249,4 +4251,241 @@ def patient_vaccine_status_api(request, patient_id, vaccine_id):
         'message': message,
         'patient_name': patient.full_name(),
         'vaccine_name': vaccine.name,
+    })
+
+
+
+# =============================================
+# VAXGUARD — PHASE 3b — LIVE MONITORING APIs
+# =============================================
+
+import random
+from django.utils import timezone as tz
+
+
+@login_required(login_url='/login/')
+def monitoring_latest_api(request, session_id):
+    """
+    Returns the latest sensor readings + symptoms + status for a session.
+    Polled by the live monitoring page every few seconds.
+    """
+    session = get_object_or_404(MonitoringSession, id=session_id)
+
+    # Role gate
+    profile = getattr(request.user, 'userprofile', None)
+    is_staff_role = profile and profile.user_type in ('healthcare_worker', 'admin')
+    is_own_patient = (
+        profile and profile.user_type == 'patient'
+        and session.patient.user_id == request.user.id
+    )
+    if not (is_staff_role or is_own_patient):
+        return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
+
+    # ─── DEMO AUTO-GENERATOR ─────────────────────────────────
+    # If the last reading is older than 2 seconds, generate a new one.
+    # This simulates a real sensor posting continuously.
+    # TODO: Remove this block once the real ESP32 is connected (Phase 5).
+    import random
+    latest = session.sensor_readings.order_by('-recorded_at').first()
+    now = tz.now()
+
+    should_generate = (
+        session.status == 'active'
+        and (latest is None or (now - latest.recorded_at).total_seconds() >= 2)
+    )
+
+    if should_generate:
+        # Base values from the previous reading, or use healthy defaults
+        base_hr = latest.heart_rate if latest and latest.heart_rate else 78
+        base_spo2 = latest.spo2 if latest and latest.spo2 else 98
+        base_temp = float(latest.temperature) if latest and latest.temperature else 36.7
+
+        # Natural-looking drift: ±5 BPM, ±1 %, ±0.15 °C
+        new_hr = max(60, min(140, base_hr + random.randint(-4, 5)))
+        new_spo2 = max(90, min(100, base_spo2 + random.choice([-1, 0, 0, 1])))
+        new_temp = round(max(35.5, min(39.5, base_temp + random.uniform(-0.15, 0.15))), 2)
+
+        SensorReading.objects.create(
+            session=session,
+            device_id='demo-auto',
+            heart_rate=new_hr,
+            spo2=new_spo2,
+            temperature=new_temp,
+        )
+        latest = session.sensor_readings.order_by('-recorded_at').first()
+
+    # ────────────────────────────────────────────────────────
+
+    latest_data = None
+    if latest:
+        latest_data = {
+            'heart_rate': latest.heart_rate,
+            'spo2': latest.spo2,
+            'temperature': str(latest.temperature) if latest.temperature is not None else None,
+            'recorded_at': latest.recorded_at.strftime('%H:%M:%S'),
+        }
+
+    # Symptoms in the last 60 minutes
+    symptoms = session.symptom_reports.select_related('symptom').order_by('-reported_at')[:20]
+    symptoms_data = [
+        {
+            'id': s.id,
+            'name': s.symptom.name,
+            'severity': s.symptom.severity_level,
+            'reported_at': s.reported_at.strftime('%H:%M:%S'),
+            'reporter_type': s.get_reported_by_type_display(),
+            'notes': s.notes or '',
+        }
+        for s in symptoms
+    ]
+
+    # Session state
+    elapsed = int((tz.now() - session.start_time).total_seconds() // 60)
+
+    return JsonResponse({
+        'success': True,
+        'session': {
+            'id': session.id,
+            'status': session.status,
+            'current_level': session.current_level,
+            'elapsed_minutes': elapsed,
+            'planned_duration_minutes': session.planned_duration_minutes,
+            'is_overdue': elapsed >= session.planned_duration_minutes,
+        },
+        'latest_reading': latest_data,
+        'symptoms': symptoms_data,
+        'symptom_count': len(symptoms_data),
+    })
+
+
+@login_required(login_url='/login/')
+def monitoring_simulate_reading_api(request, session_id):
+    """
+    Simulates a sensor reading for demo purposes.
+    Real ESP32 will POST to /api/iot/readings/ instead (Phase 5).
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'POST required'}, status=405)
+
+    session = get_object_or_404(MonitoringSession, id=session_id)
+
+    # Role gate
+    profile = getattr(request.user, 'userprofile', None)
+    if not (profile and profile.user_type in ('healthcare_worker', 'admin')):
+        return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
+
+    if session.status != 'active':
+        return JsonResponse({'success': False, 'message': 'Session is not active'}, status=400)
+
+    # Generate plausible values
+    hr = random.randint(70, 110)
+    spo2 = random.randint(94, 100)
+    temp = round(random.uniform(36.2, 38.2), 2)
+
+    reading = SensorReading.objects.create(
+        session=session,
+        device_id='demo-simulator',
+        heart_rate=hr,
+        spo2=spo2,
+        temperature=temp,
+    )
+
+    # TODO: run rule engine here (Phase 4)
+    # update_level = run_risk_engine(session)
+    # session.current_level = update_level
+    # session.save()
+
+    return JsonResponse({
+        'success': True,
+        'reading': {
+            'id': reading.id,
+            'heart_rate': reading.heart_rate,
+            'spo2': reading.spo2,
+            'temperature': str(reading.temperature),
+            'recorded_at': reading.recorded_at.strftime('%H:%M:%S'),
+        }
+    })
+
+
+@login_required(login_url='/login/')
+def monitoring_report_symptom_api(request, session_id):
+    """
+    HCW reports one or more symptoms on behalf of the patient.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'POST required'}, status=405)
+
+    session = get_object_or_404(MonitoringSession, id=session_id)
+
+    profile = getattr(request.user, 'userprofile', None)
+    if not (profile and profile.user_type in ('healthcare_worker', 'admin')):
+        return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
+
+    if session.status != 'active':
+        return JsonResponse({'success': False, 'message': 'Session is not active'}, status=400)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Invalid JSON'}, status=400)
+
+    symptom_ids = data.get('symptom_ids', [])
+    reported_by_type = data.get('reported_by_type', 'healthcare_worker')
+    notes = data.get('notes', '')
+
+    if not symptom_ids:
+        return JsonResponse({'success': False, 'message': 'Select at least one symptom'}, status=400)
+
+    if reported_by_type not in ('patient', 'healthcare_worker', 'caregiver'):
+        reported_by_type = 'healthcare_worker'
+
+    created = []
+    for sid in symptom_ids:
+        try:
+            symptom = Symptom.objects.get(id=sid, is_active=True)
+        except Symptom.DoesNotExist:
+            continue
+        report = SymptomReport.objects.create(
+            session=session,
+            symptom=symptom,
+            reported_by=request.user,
+            reported_by_type=reported_by_type,
+            notes=notes,
+        )
+        created.append({'id': report.id, 'symptom': symptom.name})
+
+    # TODO: run rule engine here (Phase 4)
+
+    return JsonResponse({
+        'success': True,
+        'created': created,
+        'message': f'{len(created)} symptom(s) recorded.'
+    })
+
+
+@login_required(login_url='/login/')
+def monitoring_end_session_api(request, session_id):
+    """
+    Ends the active monitoring session.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'POST required'}, status=405)
+
+    session = get_object_or_404(MonitoringSession, id=session_id)
+
+    profile = getattr(request.user, 'userprofile', None)
+    if not (profile and profile.user_type in ('healthcare_worker', 'admin')):
+        return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
+
+    if session.status != 'active':
+        return JsonResponse({'success': False, 'message': 'Session is already closed'}, status=400)
+
+    session.status = 'completed'
+    session.end_time = tz.now()
+    session.save()
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Session closed. You can now record an outcome if needed.',
+        'session_id': session.id,
     })
